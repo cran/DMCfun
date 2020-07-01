@@ -1,0 +1,181 @@
+#' @title dmcSim
+#'
+#' @description DMC model simulation detailed in  Ulrich, R., Schroeter, H., Leuthold, H., & Birngruber, T. (2015).
+#' Automatic and controlled stimulus processing in conflict tasks: Superimposed diffusion processes and delta functions.
+#' Cognitive Psychology, 78, 148-174. This function is essentially a wrapper around the c++ function runDMC
+#'
+#' @param amp amplitude of automatic activation
+#' @param tau time to peak automatic activation
+#' @param mu drift rate of controlled processes
+#' @param bnds +- response criterion
+#' @param resMean mean of non-decisional component
+#' @param resSD standard deviation of non-decisional component
+#' @param sigm diffusion constant
+#' @param aaShape shape parameter of automatic activation
+#' @param nTrl number of trials
+#' @param tmax number of time points per trial
+#' @param varSP true/false variable starting point
+#' @param spShape shape parameter of starting point
+#' @param spLim limit range of distribution of starting point
+#' @param varDR true/false variable drift rate NB. In DMC, drift rate across trials is always constant.
+#' @param drShape shape parameter of drift rate
+#' @param drLim limit range of distribution of drift rate
+#' @param fullData TRUE/FALSE (Default: FALSE)
+#' @param nTrlData Number of trials to plot
+#' @param stepDelta Number of delta bins
+#' @param stepCAF Number of CAF bins
+#' @param printInputArgs TRUE/FALSE
+#' @param printResults TRUE/FALSE
+#' @param setSeed TRUE/FALSE
+#'
+#' @return dmcsim
+#'
+#' The function returns a list with the relevant results from the simulation. The list
+#' is accessed with obj$name with the the following:
+#' \item{obj$means}{Condition means for reaction time and error rate}
+#' \item{obj$caf}{Accuracy per bin for compatible and incompatible trials}
+#' \item{obj$delta}{Mean RT and compatibility effect per bin}
+#' \item{obj$sim}{Individual trial data points (reaction times/error) and activation vectors from simulation}
+#' \item{obj$trials}{Example individual trial timecourse for n compatible and incompatible trials}
+#' \item{obj$prms}{The input parameters used in the simulation}
+#'
+#' @examples
+#' \donttest{
+#' # Example 1
+#' dmc <- dmcSim(fullData = TRUE)  # full data only required for activation plot (top left)
+#' plot(dmc)
+#' dmc <- dmcSim() # faster
+#' plot(dmc)
+#'
+#' # Example 2
+#' dmc <- dmcSim(tau = 130)
+#' plot(dmc)
+#'
+#' # Example 3
+#' dmc <- dmcSim(tau = 90)
+#' plot(dmc)
+#'
+#' # Example 4
+#' dmc <- dmcSim(varSP = TRUE)
+#' plot(dmc, "delta")
+#'
+#' # Example 5
+#' dmc <- dmcSim(tau = 130, varDR = TRUE)
+#' plot(dmc, "caf")
+#'
+#' # Example 6
+#' dmc <- dmcSim(stepDelta = 10, stepCAF = 10)
+#' plot(dmc)
+#' }
+#'
+#' @export
+dmcSim <- function(amp = 20, tau = 30, mu = 0.5, bnds = 75, resMean = 300, resSD = 30, aaShape = 2, spShape = 3,
+                   sigm = 4,  nTrl = 100000, tmax = 1000,
+                   varSP = FALSE, spLim = c(-75, 75),
+                   varDR = FALSE, drShape = 3, drLim = c(0.1, 0.7),
+                   fullData = FALSE, nTrlData = 5,
+                   stepDelta = 5, stepCAF = 20,
+                   printInputArgs = TRUE, printResults = TRUE,
+                   setSeed = FALSE) {
+
+  dmc <- dmcCppR(r_in = list(amp = amp, tau = tau, mu = mu, bnds = bnds, resMean = resMean, resSD = resSD, aaShape = aaShape, spShape = spShape,
+                             sigm = sigm,  nTrl = nTrl, tmax = tmax,
+                             varSP = varSP, spLimLow = spLim[1], spLimHigh = spLim[2],
+                             varDR = varDR, drShape = 3, drLimLow = drLim[1], drLimHigh = drLim[2],
+                             fullData = fullData, nTrlData = nTrlData,
+                             stepDelta = stepDelta, stepCAF = stepCAF,
+                             printInputArgs = printInputArgs, printResults = printResults,
+                             setSeed = setSeed))
+  
+  summary     <- dmc$summary 
+  dmc$summary <- NULL
+  
+  # means
+  dmc$means <- tibble::as_tibble(rbind(summary$resSum_comp, summary$resSum_incomp), .name_repair = "minimal")
+  colnames(dmc$means) <- c("rtCor", "sdRtCor", "perErr", "rtErr", "sdRtErr")
+  dmc$means <- tibble::add_column(Comp = c("comp", "incomp"), dmc$means, .before = TRUE)
+
+  # caf
+  nCAF    <- length(summary$caf_comp)
+  dmc$caf <- tibble::tibble(accPer = c(summary$caf_comp, summary$caf_incomp))
+  dmc$caf <- tibble::add_column(bin = rep(1:nCAF, each = 1, times = 2), dmc$caf, .before = TRUE)
+  dmc$caf <- tibble::add_column(Comp = rep(c("comp", "incomp"), each = nCAF), dmc$caf, .before = TRUE)
+
+  # delta
+  nDelta    <- length(summary$delta_pct_comp)
+  dmc$delta <- tibble::tibble("meanComp" = summary$delta_pct_comp,
+                              "meanIncomp" = summary$delta_pct_incomp,
+                              "meanBin" = summary$delta_pct_mean,
+                              "meanEffect" = summary$delta_pct_delta)
+  dmc$delta <- tibble::add_column("Bin" = rep(1:nDelta, each = 1, times = 1), dmc$delta, .before = TRUE)
+  
+  # store parameters used to call function
+  dmc$prms <- as.list(environment())
+  
+  class(dmc) <- "dmcsim"
+  
+  return(dmc)
+
+}
+
+
+
+#' @title dmcSims
+#'
+#' @description Run dmcSim with range of input parameters.
+#'
+#' @param params (list of parameters to dmcSim)
+#' @param printInputArgs Print DMC input arguments to console
+#' @param printResults Print DMC output to console
+#'
+#' @return list of dmcsim
+#'
+#' @examples
+#' \donttest{
+#' # Example 1
+#' params <- list(amp = seq(10, 20, 5), tau = c(50, 100, 150), nTrl = 50000)
+#' dmc <- dmcSims(params)
+#' plot(dmc[[1]])    # full combination 1
+#' plot(dmc)         # delta plots for all combinations
+#' plot(dmc[c(1:3)]) # delta plots for specific combinations
+#'
+#' # Example 2
+#' params <- list(amp = seq(10, 20, 5), tau = seq(20, 40, 20), bnds = seq(50, 100, 25))
+#' dmc <- dmcSims(params)
+#' plot(dmc[[1]])  # combination 1
+#' plot(dmc, ncol = 2)       # delta plots for all combinations
+#' plot(dmc[c(1:3)]) # delta plots for specific combinations
+#' }
+#'
+#' @export
+dmcSims <- function(params,
+                    printInputArgs = FALSE,
+                    printResults = FALSE) {
+
+  params  <- expand.grid(params)
+  if (ncol(params) > 1) {
+    uparams <- params[, lengths(lapply(params, unique)) != 1]
+  } else {
+    uparams <- params
+  }
+  params <- setNames(split(params, seq(nrow(params))), rownames(params))
+
+  dmc <- vector("list", length(params))
+  for (i in 1:length(params)) {
+
+    # inputs for each dmcSim call taken from params + add default of not printing individual results
+    dmcInputs <- params[[i]]
+    message("DMC ", i, " of ", length(params), ": ", paste0(names(dmcInputs), "=", dmcInputs, sep="", collapse=", "))
+    dmcInputs$printInputArgs <- printInputArgs
+    dmcInputs$printResults   <- printResults
+
+    dmc[[i]]        <- do.call(dmcSim, dmcInputs)
+    dmc[[i]]$params <- uparams
+
+  }
+
+  class(dmc) <- "dmclist"
+  return(dmc)
+
+}
+
