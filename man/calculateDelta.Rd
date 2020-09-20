@@ -6,7 +6,7 @@
 \usage{
 calculateDelta(
   dat,
-  stepDelta = 5,
+  nDelta = 19,
   columns = c("VP", "Comp", "RT"),
   compCoding = c("comp", "incomp"),
   quantileType = 5
@@ -16,8 +16,7 @@ calculateDelta(
 \item{dat}{DataFrame with columns containing the participant number, condition
 compatibility, and RT data (in ms).}
 
-\item{stepDelta}{Step size for the Delta bins. For example, a step size of 5 would result
-in 19 CAF bins positioned at 5, 10, 15, ... 85, 90, 95\%.}
+\item{nDelta}{Number of delta bins.}
 
 \item{columns}{Name of required columns Default: c("VP", "Comp", "RT")}
 
@@ -26,7 +25,7 @@ in 19 CAF bins positioned at 5, 10, 15, ... 85, 90, 95\%.}
 \item{quantileType}{Argument (1-9) from R function quantile specifying the algorithm (?quantile)}
 }
 \value{
-DataFrame (tibble)
+DataFrame
 }
 \description{
 Calculate delta plot. Here RTs are split into n bins (Default: 5) for compatible and

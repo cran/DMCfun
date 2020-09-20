@@ -23,6 +23,7 @@
   ylabs = TRUE,
   xaxts = TRUE,
   yaxts = TRUE,
+  resetPar = TRUE,
   ...
 )
 }
@@ -62,6 +63,8 @@
 \item{xaxts}{TRUE/FALSE}
 
 \item{yaxts}{TRUE/FALSE}
+
+\item{resetPar}{TRUE/FALSE Reset graphical parameters}
 
 \item{...}{additional plot pars}
 }
@@ -107,7 +110,7 @@ dat <- addDataDF(dat,
                            "Comp_incomp" = c(470, 100, 120)),
                  Error = list("Comp_comp"   = c(5, 3, 2, 1),
                               "Comp_incomp" = c(15, 8, 4, 2)))
-datOb <- dmcObservedData(dat, stepCAF = 25)
+datOb <- dmcObservedData(dat, nCAF = 4)
 plot(datOb)
 }
 
