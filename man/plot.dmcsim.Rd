@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot.R
 \name{plot.dmcsim}
 \alias{plot.dmcsim}
-\title{plot.dmcsim}
+\title{plot.dmcsim: Plot dmc simulation}
 \usage{
 \method{plot}{dmcsim}(
   x,
@@ -10,6 +10,7 @@
   ylimCAF = c(0, 1),
   cafBinLabels = FALSE,
   ylimDelta = c(-50, 150),
+  xlimDelta = NULL,
   ylimRt = c(200, 800),
   ylimErr = c(0, 20),
   legend = TRUE,
@@ -34,6 +35,8 @@
 \item{cafBinLabels}{TRUE/FALSE}
 
 \item{ylimDelta}{ylimit for delta plot}
+
+\item{xlimDelta}{xlimit for delta plot (Default is 0 to tmax)}
 
 \item{ylimRt}{ylimit for rt plot}
 
@@ -86,6 +89,7 @@ plot(dmc, figType = "all")
 # Example 4
 dmc = dmcSim()
 plot(dmc, figType = "summary3")
+
 }
 
 }

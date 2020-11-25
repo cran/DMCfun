@@ -1,4 +1,4 @@
-#' @title summary.dmcsim
+#' @title summary.dmcsim: dmc simulation summary
 #'
 #' @description Summary of the overall results from dmcSim
 #'
@@ -17,19 +17,19 @@
 #' # Example 2
 #' dmc <- dmcSim(tau = 90)
 #' summary(dmc)
-#
+#'
 #' }
 #'
 #' @export
 summary.dmcsim <- function(object, digits = 1, ...) {
-  df <- as.data.frame(object$means) 
+  df <- as.data.frame(object$summary) 
   df[, c(2:6)] <- round(df[, c(2:6)], digits)
   return(df)
 }
 
 
 
-#' @title summary.dmcfit
+#' @title summary.dmcfit: dmc fit aggregate summary
 #'
 #' @description Summary of the simulation results from dmcFitAgg
 #'
@@ -42,49 +42,25 @@ summary.dmcsim <- function(object, digits = 1, ...) {
 #' @examples
 #' \donttest{
 #' # Example 1
-#' fitAgg <- dmcFitAgg(flankerData, nTrl = 1000)
+#' fitAgg <- dmcFit(flankerData, nTrl = 1000)
 #' summary(fitAgg)  
 #' }
 #'
 #' @export
 summary.dmcfit <- function(object, digits = 2, ...) {
-  return(round(do.call(cbind.data.frame, object$par), digits))
-}
-
-
-
-#' @title summary.dmcfitvp
-#'
-#' @description Summary of the simulation results from dmcFitVPs
-#'
-#' @param object Output from dmcFitVPs
-#' @param digits Number of digits in the output
-#' @param ... pars
-#'
-#' @return list of DataFrames with the first being individual participant fitted parameters and the 
-#' second being the mean fitted parameters
-#'
-#' @examples
-#' \donttest{
-#' # Example 1
-#' fitVPs <- dmcFitVPs(flankerData, nTrl = 1000, VP = c(1, 10))
-#' summary(fitVPs)
-#' fit <- mean(fitVPs)
-#' }
-#'
-#' @export
-summary.dmcfitvp <- function(object, digits = 2, ...) {
-  
-  VPs <- which(!unlist(lapply(object, is.null)))
-  outVP <- NULL
-  for (VP in VPs) {
-    outVP <- rbind(outVP, cbind(VP, as.data.frame(object[[VP]]$par)))
+  if ("sim" %in% names(object)) {  # aggregated fit
+    return(round(do.call(cbind.data.frame, object$par), digits))
+  } else {  # individual fits
+    subjects <- which(!unlist(lapply(object, is.null)))
+    outSubject <- NULL
+    for (subject in subjects) {
+      outSubject <- rbind(outSubject, cbind(subject, as.data.frame(object[[subject]]$par)))
+    }
+    outSubject <- round(outSubject, digits)
+    outAvg     <- round(as.data.frame(t(colMeans(data.matrix(outSubject[, 2:11])))), digits)
+    out        <- list(outSubject, outAvg)
+    
+    return(out) 
   }
-  outVP  <- round(outVP, digits)
-  outAvg <- round(as.data.frame(t(colMeans(data.matrix(outVP[, 2:11])))), digits)
-  out    <- list(outVP, outAvg)
-  
-  return(out)
   
 }
-

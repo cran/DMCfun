@@ -2,7 +2,7 @@
 % Please edit documentation in R/dmcData.R
 \name{addDataDF}
 \alias{addDataDF}
-\title{addDataDF}
+\title{addDataDF: Add data to a simuluated dataframe}
 \usage{
 addDataDF(dat, RT = NULL, Error = NULL)
 }
@@ -30,13 +30,13 @@ hist(dat$RT, 100)
 table(dat$Error)
 
 # Example 2: defined overall RT parameters
-dat <- createDF(nVP = 50, nTrl = 50, design = list("Comp" = c("comp", "incomp")))
+dat <- createDF(nSubjects = 50, nTrl = 50, design = list("Comp" = c("comp", "incomp")))
 dat <- addDataDF(dat, RT = c(500, 150, 100))
 boxplot(dat$RT ~ dat$Comp)
 table(dat$Comp, dat$Error)
 
 # Example 3: defined RT + Error parameters across conditions
-dat <- createDF(nVP = 50, nTrl = 50, design = list("Comp" = c("comp", "incomp")))
+dat <- createDF(nSubjects = 50, nTrl = 50, design = list("Comp" = c("comp", "incomp")))
 dat <- addDataDF(dat,
                  RT = list("Comp_comp"   = c(500, 80, 100),
                            "Comp_incomp" = c(600, 80, 140)),
@@ -47,7 +47,7 @@ table(dat$Comp, dat$Error)
 
 # Example 4:
 # create dataframe with defined RT + Error parameters across different conditions
-dat <- createDF(nVP = 50, nTrl = 50, design = list("Comp" = c("comp", "incomp", "neutral")))
+dat <- createDF(nSubjects = 50, nTrl = 50, design = list("Comp" = c("comp", "incomp", "neutral")))
 dat <- addDataDF(dat,
                  RT = list("Comp_comp"      = c(500, 150, 100),
                            "Comp_neutral"   = c(550, 150, 100),
@@ -60,7 +60,7 @@ table(dat$Comp, dat$Error)
 
 # Example 5:
 # create dataframe with defined RT + Error parameters across different conditions
-dat <- createDF(nVP = 50, nTrl = 50,
+dat <- createDF(nSubjects = 50, nTrl = 50,
                 design = list("Hand" = c("left", "right"),
                               "Side" = c("left", "right")))
 dat <- addDataDF(dat,
@@ -75,4 +75,5 @@ dat <- addDataDF(dat,
 
 boxplot(dat$RT ~ dat$Hand + dat$Side)
 table(dat$Error, dat$Hand, dat$Side)
+
 }

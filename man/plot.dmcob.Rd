@@ -2,12 +2,12 @@
 % Please edit documentation in R/plot.R
 \name{plot.dmcob}
 \alias{plot.dmcob}
-\title{plot.dmcob}
+\title{plot.dmcob: Plot observed data}
 \usage{
 \method{plot}{dmcob}(
   x,
   figType = "summary",
-  VP = NULL,
+  subject = NULL,
   legend = TRUE,
   labels = c("Compatible", "Incompatible"),
   cols = c("black", "green", "red"),
@@ -28,11 +28,11 @@
 )
 }
 \arguments{
-\item{x}{Output from fitDMC}
+\item{x}{Output from dmcObservedData}
 
 \item{figType}{summary, rtCorrect, errorRate, rtErrors, cdf, caf, delta, all}
 
-\item{VP}{NULL (aggregated data across all participants) or integer for participant number}
+\item{subject}{NULL (aggregated data across all subjects) or integer for subject number}
 
 \item{legend}{TRUE/FALSE (or FUNCTION) plot legend on each plot}
 
@@ -69,14 +69,9 @@
 \item{...}{additional plot pars}
 }
 \description{
-Plot results from the output of dmcSim. The plot
-can be an overall summary, or individual plots (activation, trials,
-pdf, cdf, caf, delta, all). Plot type summary1 contains an activation plot,
-example individual trials, the probability distribution function (PDF), the
-cumulative distribution function (CDF), the conditional accuracy function (CAF)
-and delta plots. This required that dmcSim is run with fullData = TRUE. Plot
-type summary2 contains only the PDF, CDF, CAF and delta plots and does not require
-that dmcSim is run with fullData = TRUE.
+Plot results from the output of dmcObservedData. The plot
+can be an overall summary, or individual plots (rtCorrect, errorRate,
+rtErrors, cdf, caf, delta, all).
 }
 \examples{
 \donttest{
@@ -92,7 +87,7 @@ plot(simonData, errorBars = TRUE, errorBarType = "se")
 plot(simonData, figType = "delta", errorBars = TRUE, errorBarType = "sd")
 
 # Example 3 (simulated dataset)
-dat <- createDF(nVP = 50, nTrl = 50,
+dat <- createDF(nSubjects = 50, nTrl = 50,
                 design = list("Comp" = c("comp", "incomp")))
 dat <- addDataDF(dat,
                  RT = list("Comp_comp"   = c(420, 100, 80),
@@ -103,7 +98,7 @@ datOb <- dmcObservedData(dat)
 plot(datOb, errorBars = TRUE, errorBarType = "sd")
 
 # Example 4 (simulated dataset)
-dat <- createDF(nVP = 50, nTrl = 50,
+dat <- createDF(nSubjects = 50, nTrl = 50,
                 design = list("Comp" = c("comp", "incomp")))
 dat <- addDataDF(dat,
                  RT = list("Comp_comp"   = c(420, 100, 150),

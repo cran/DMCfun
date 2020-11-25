@@ -1,4 +1,4 @@
-#' @title dmcSim
+#' @title dmcSim: Run dmc simulation 
 #'
 #' @description DMC model simulation detailed in  Ulrich, R., Schroeter, H., Leuthold, H., & Birngruber, T. (2015).
 #' Automatic and controlled stimulus processing in conflict tasks: Superimposed diffusion processes and delta functions.
@@ -6,7 +6,7 @@
 #'
 #' @param amp amplitude of automatic activation
 #' @param tau time to peak automatic activation
-#' @param mu drift rate of controlled processes
+#' @param drc drift rate of controlled processes
 #' @param bnds +- response criterion
 #' @param resMean mean of non-decisional component
 #' @param resSD standard deviation of non-decisional component
@@ -70,10 +70,10 @@
 #' }
 #'
 #' @export
-dmcSim <- function(amp = 20, tau = 30, mu = 0.5, bnds = 75, resMean = 300, resSD = 30, aaShape = 2, spShape = 3,
+dmcSim <- function(amp = 20, tau = 30, drc = 0.5, bnds = 75, resMean = 300, resSD = 30, aaShape = 2, spShape = 3,
                    sigm = 4,  nTrl = 100000, tmax = 1000,
                    varSP = FALSE, spLim = c(-75, 75),
-                   varDR = FALSE, drShape = 3, drLim = c(0.1, 0.7),
+                   varDR = FALSE, drShape = 3, drLim = c(0.1, 0.7), 
                    fullData = FALSE, nTrlData = 5,
                    nDelta = 9, pDelta = vector(), nCAF = 5,
                    printInputArgs = TRUE, printResults = TRUE,
@@ -84,10 +84,10 @@ dmcSim <- function(amp = 20, tau = 30, mu = 0.5, bnds = 75, resMean = 300, resSD
     nDelta = length(pDelta)
   }
   
-  dmc <- dmcCppR(r_in = list(amp = amp, tau = tau, mu = mu, bnds = bnds, resMean = resMean, resSD = resSD, aaShape = aaShape, spShape = spShape,
+  dmc <- dmcCppR(r_in = list(amp = amp, tau = tau, drc = drc, bnds = bnds, resMean = resMean, resSD = resSD, aaShape = aaShape, spShape = spShape,
                              sigm = sigm,  nTrl = nTrl, tmax = tmax,
                              varSP = varSP, spLimLow = spLim[1], spLimHigh = spLim[2],
-                             varDR = varDR, drShape = 3, drLimLow = drLim[1], drLimHigh = drLim[2],
+                             varDR = varDR, drShape = 3, drLimLow = drLim[1], drLimHigh = drLim[2], 
                              fullData = fullData, nTrlData = nTrlData,
                              nDelta = nDelta, pDelta = pDelta, nCAF = nCAF,
                              printInputArgs = printInputArgs, printResults = printResults,
@@ -97,9 +97,9 @@ dmcSim <- function(amp = 20, tau = 30, mu = 0.5, bnds = 75, resMean = 300, resSD
   dmc$summary <- NULL
   
   # means
-  dmc$means        <- as.data.frame(rbind(summary$resSum_comp, summary$resSum_incomp)) 
-  names(dmc$means) <- c("rtCor", "sdRtCor", "perErr", "rtErr", "sdRtErr")
-  dmc$means        <- cbind(Comp = c("comp", "incomp"), dmc$means)
+  dmc$summary        <- as.data.frame(rbind(summary$resSum_comp, summary$resSum_incomp)) 
+  names(dmc$summary) <- c("rtCor", "sdRtCor", "perErr", "rtErr", "sdRtErr")
+  dmc$summary        <- cbind(Comp = c("comp", "incomp"), dmc$summary)
 
   # caf
   dmc$caf <- cbind(Comp = rep(c("comp", "incomp"), each = nCAF), 
@@ -124,7 +124,7 @@ dmcSim <- function(amp = 20, tau = 30, mu = 0.5, bnds = 75, resMean = 300, resSD
 
 
 
-#' @title dmcSims
+#' @title dmcSims: Run multiple dmc simulations
 #'
 #' @description Run dmcSim with range of input parameters.
 #'
