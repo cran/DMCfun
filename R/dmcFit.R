@@ -16,7 +16,7 @@
 #' amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, sigm (e.g., maxVals = list(amp = 40, tau = 300, drc = 1.0, bnds = 150, resMean = 800,
 #' resSD = 100, aaShape = 3, spShape = 4, sigm = 10))
 #' @param fixedFit Fix parameter to starting value. This is a list with bool values specified individually for
-#' amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, sigm (e.g., fixedFit = list(amp = F,  tau = F, drc = F, bnds = F, resMean = F,
+#' amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, sigm (e.g., fixedFit = list(amp = F, tau = F, drc = F, bnds = F, resMean = F,
 #' resSD = F, aaShape = F, spShape = F, sigm = T))
 #' @param fitInitialGrid TRUE/FALSE
 #' @param fitInitialGridN 10 reduce if searching more than 1 initial parameter
@@ -26,6 +26,8 @@
 #' @param nCAF Number of CAF bins. 
 #' @param nDelta Number of delta bins. 
 #' @param pDelta Alternative to nDelta by directly specifying required percentile values   
+#' @param rtMax limit on simulated RT (decision + non-decisional component)
+#' @param varSP Variable starting point TRUE/FALSE
 #' @param printInputArgs TRUE/FALSE
 #' @param printResults TRUE/FALSE
 #' @param maxit The maximum number of iterations (Default: 500)
@@ -85,6 +87,8 @@ dmcFit <- function(resOb,
                    nCAF            = 5,
                    nDelta          = 19,
                    pDelta          = vector(),
+                   varSP           = TRUE,
+                   rtMax           = 5000,
                    printInputArgs  = TRUE,
                    printResults    = FALSE, 
                    maxit           = 500) {
@@ -115,7 +119,7 @@ dmcFit <- function(resOb,
   }
   
   # function to minimise
-  minimizeCostValue <- function(x, prms, fixedFit, resOb, nTrl, nDelta, pDelta, nCAF, minVals, maxVals, printInputArgs, printResults) {
+  minimizeCostValue <- function(x, prms, fixedFit, resOb, nTrl, nDelta, pDelta, nCAF, varSP, rtMax, minVals, maxVals, printInputArgs, printResults) {
     
     prms[!as.logical(fixedFit)] <- x
     
@@ -124,9 +128,9 @@ dmcFit <- function(resOb,
     prms <- as.list(pmin(unlist(prms), unlist(maxVals)))
     
     resTh <- dmcSim(amp = prms$amp, tau = prms$tau, drc = prms$drc, bnds = prms$bnds,
-                    resMean = prms$resMean, resSD = prms$resSD, aaShape = prms$aaShape,
-                    varSP = TRUE, spShape = prms$spShape, sigm = prms$sigm, spLim = c(-prms$bnds, prms$bnds),
-                    nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF,
+                    resMean = prms$resMean, resSD = prms$resSD, rtMax = rtMax, aaShape = prms$aaShape,
+                    spShape = prms$spShape, sigm = prms$sigm, spLim = c(-prms$bnds, prms$bnds),
+                    nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF, varSP = varSP,
                     printInputArgs = printInputArgs, printResults = printResults)
     
     return(calculateCostValue(resTh, resOb))
@@ -165,10 +169,10 @@ dmcFit <- function(resOb,
     
     pCostValue <- function(i){
       resTh <- dmcSim(amp = startValsGrid$amp[i], tau = startValsGrid$tau[i], drc = startValsGrid$drc[i],
-                      bnds = startValsGrid$bnds[i], resMean = startValsGrid$resMean[i], resSD = startValsGrid$resSD[i],
-                      aaShape = startValsGrid$aaShape[i], varSP = TRUE, spShape = startValsGrid$spShape[i],
+                      bnds = startValsGrid$bnds[i], resMean = startValsGrid$resMean[i], resSD = startValsGrid$resSD[i], rtMax = rtMax,
+                      aaShape = startValsGrid$aaShape[i], spShape = startValsGrid$spShape[i],
                       sigm = startValsGrid$sigm[i],  spLim = c(-startValsGrid$bnds[i], startValsGrid$bnds[i]),
-                      nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF,
+                      nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF, varSP = varSP,
                       printInputArgs = TRUE, printResults = FALSE)
       return(calculateCostValue(resTh, resOb))
     }
@@ -191,7 +195,8 @@ dmcFit <- function(resOb,
   # optimize
   fit <- optimr::optimr(par = startVals[!as.logical(fixedFit)], fn = minimizeCostValue,
                         prms = prms, fixedFit = fixedFit, resOb = resOb,
-                        nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF, minVals = minVals, maxVals = maxVals,
+                        nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF, varSP = varSP, 
+                        rtMax = rtMax, minVals = minVals, maxVals = maxVals,
                         printInputArgs = printInputArgs, printResults = printResults,
                         method = "Nelder-Mead",
                         control = list(parscale = parScale[!as.logical(fixedFit)], maxit = maxit))
@@ -208,14 +213,15 @@ dmcFit <- function(resOb,
   
   message(sprintf("RMSE: %.3f\n", fit$value))
   dmcfit <- dmcSim(amp = prms$amp, tau = prms$tau, drc = prms$drc,
-                   bnds = prms$bnds, resMean = prms$resMean, resSD = prms$resSD,
+                   bnds = prms$bnds, resMean = prms$resMean, resSD = prms$resSD, rtMax = rtMax,
                    aaShape = prms$aaShape, sigm = prms$sigm,
-                   varSP = TRUE, spShape = prms$spShape, spLim = c(-prms$bnds, prms$bnds),
-                   nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF,
+                   spShape = prms$spShape, spLim = c(-prms$bnds, prms$bnds),
+                   nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF, varSP = varSP,
                    printResults = TRUE)
-  
-  dmcfit$prms <- NULL
-  dmcfit$par  <- prms
+
+  # fitted parameters  
+  dmcfit$prms <- NULL  # TO DO: Would this be useful to keep or is it only redundant?
+  dmcfit$par  <- prms  
   dmcfit$par["RMSE"] <- fit$value
   
   class(dmcfit) <- "dmcfit"
@@ -246,6 +252,8 @@ dmcFit <- function(resOb,
 #' @param nCAF Number of CAF bins. 
 #' @param nDelta Number of delta bins. 
 #' @param pDelta Alternative to nDelta by directly specifying required percentile values   
+#' @param rtMax limit on simulated RT (decision + non-decisional component)
+#' @param varSP Variable starting point TRUE/FALSE
 #' @param control Additional control parameters passes to DEoptim  
 #'
 #' @return dmcfit
@@ -280,6 +288,8 @@ dmcFitDE <- function(resOb,
                      nCAF     = 5,
                      nDelta   = 19,
                      pDelta   = vector(), 
+                     varSP    = TRUE,
+                     rtMax    = 5000, 
                      control  = list()) {
   
   # R check limits number of cores to 2 (https://stackoverflow.com/questions/50571325/r-cran-check-fail-when-using-parallel-functions)
@@ -314,7 +324,7 @@ dmcFitDE <- function(resOb,
   }
   
   # function to minimise
-  minimizeCostValue <- function(x, prms, fixedFit, resOb, nTrl, nDelta, pDelta, nCAF, minVals, maxVals, printInputArgs, printResults) {
+  minimizeCostValue <- function(x, prms, fixedFit, minVals, maxVals, resOb, nTrl, nDelta, nCAF, varSP, pDelta, rtMax, printInputArgs, printResults) {
     
     prms[!as.logical(fixedFit)] <- x
     
@@ -323,9 +333,9 @@ dmcFitDE <- function(resOb,
     prms <- as.list(pmin(unlist(prms), unlist(maxVals)))
     
     resTh <- dmcSim(amp = prms$amp, tau = prms$tau, drc = prms$drc, bnds = prms$bnds,
-                    resMean = prms$resMean, resSD = prms$resSD, aaShape = prms$aaShape,
-                    varSP = TRUE, spShape = prms$spShape, sigm = prms$sigm, spLim = c(-prms$bnds, prms$bnds),
-                    nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF,
+                    resMean = prms$resMean, resSD = prms$resSD, rtMax = rtMax, aaShape = prms$aaShape,
+                    spShape = prms$spShape, sigm = prms$sigm, spLim = c(-prms$bnds, prms$bnds),
+                    nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF, varSP = varSP,
                     printInputArgs = printInputArgs, printResults = printResults)
     
     return(calculateCostValue(resTh, resOb))
@@ -344,6 +354,8 @@ dmcFitDE <- function(resOb,
                          nDelta = nDelta, 
                          nCAF = nCAF, 
                          pDelta = pDelta, 
+                         varSP = varSP, 
+                         rtMax = rtMax, 
                          printInputArgs = FALSE,  
                          printResults = FALSE, 
                          control = control) 
@@ -363,13 +375,14 @@ dmcFitDE <- function(resOb,
   
   message(sprintf("RMSE: %.3f\n", fit$optim$bestval))
   dmcfit <- dmcSim(amp = prms$amp, tau = prms$tau, drc = prms$drc,
-                   bnds = prms$bnds, resMean = prms$resMean, resSD = prms$resSD,
+                   bnds = prms$bnds, resMean = prms$resMean, resSD = prms$resSD, rtMax = rtMax,
                    aaShape = prms$aaShape, sigm = prms$sigm,
-                   varSP = TRUE, spShape = prms$spShape, spLim = c(-prms$bnds, prms$bnds),
-                   nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF,
+                   spShape = prms$spShape, spLim = c(-prms$bnds, prms$bnds),
+                   nTrl = nTrl, nDelta = nDelta, pDelta = pDelta, nCAF = nCAF, varSP = varSP,
                    printResults = TRUE)
-  
-  dmcfit$prms <- NULL
+ 
+  # fitted parameters 
+  dmcfit$prms <- NULL  # TO DO: Would this be useful to keep or is it only redundant?
   dmcfit$par  <- prms
   dmcfit$par["RMSE"] <- fit$optim$bestval
   
@@ -398,6 +411,8 @@ dmcFitDE <- function(resOb,
 #' @param nCAF Number of CAF bins. 
 #' @param nDelta Number of delta bins. 
 #' @param pDelta Alternative to nDelta by directly specifying required percentile values   
+#' @param varSP Variable starting point TRUE/FALSE
+#' @param rtMax limit on simulated RT (decision + non-decisional component)
 #' @param subjects NULL (aggregated data across all subjects) or integer for subject number
 #' @param printInputArgs TRUE/FALSE
 #' @param printResults TRUE/FALSE
@@ -433,6 +448,8 @@ dmcFitSubject <- function(resOb,
                           nCAF            = 5,
                           nDelta          = 19,
                           pDelta          = vector(),
+                          varSP           = TRUE,
+                          rtMax           = 5000,
                           subjects        = c(),
                           printInputArgs  = TRUE,
                           printResults    = FALSE,
@@ -473,6 +490,8 @@ dmcFitSubject <- function(resOb,
                                 nCAF            = nCAF,
                                 nDelta          = nDelta,
                                 pDelta          = pDelta,
+                                varSP           = varSP,
+                                rtMax           = rtMax,
                                 printInputArgs  = printInputArgs,
                                 printResults    = printResults, 
                                 maxit           = maxit)
@@ -500,6 +519,8 @@ dmcFitSubject <- function(resOb,
 #' @param nCAF Number of CAF bins. 
 #' @param nDelta Number of delta bins. 
 #' @param pDelta Alternative to nDelta by directly specifying required percentile values   
+#' @param varSP Variable starting point TRUE/FALSE
+#' @param rtMax limit on simulated RT (decision + non-decisional component)
 #' @param subjects NULL (aggregated data across all subjects) or integer for subject number
 #' @param control Additional control parameters passes to DEoptim  
 #'
@@ -529,6 +550,8 @@ dmcFitSubjectDE <- function(resOb,
                             nCAF     = 5,
                             nDelta   = 19,
                             pDelta   = vector(),
+                            varSP    = TRUE,
+                            rtMax    = 5000,
                             subjects = c(),
                             control  = list()) {
   
@@ -537,8 +560,8 @@ dmcFitSubjectDE <- function(resOb,
   }
   
   # default parameter space
-  defaultMinVals  <- list(amp = 10, tau =   5, drc = 0.1, bnds =  20, resMean = 200, resSD =  5,  aaShape = 1, spShape = 2, sigm =  1)
-  defaultMaxVals  <- list(amp = 40, tau = 300, drc = 1.0, bnds = 150, resMean = 800, resSD = 100, aaShape = 3, spShape = 4, sigm = 10)
+  defaultMinVals  <- list(amp = 10, tau =   5, drc = 0.1, bnds =  20, resMean = 200, resSD =  5,  aaShape = 1, spShape = 2, sigm = 4)
+  defaultMaxVals  <- list(amp = 40, tau = 300, drc = 1.0, bnds = 150, resMean = 800, resSD = 100, aaShape = 3, spShape = 4, sigm = 4)
   defaultFixedFit <- list(amp = F,  tau = F,   drc = F,   bnds = F,   resMean = F,   resSD = F,   aaShape = F, spShape = F, sigm = T)
   defaultControl  <- list(VTR = 1,  strategy = 1, NP = 100, itermax  = 200, trace = 1)
   
@@ -561,6 +584,8 @@ dmcFitSubjectDE <- function(resOb,
                                   nCAF     = nCAF,
                                   nDelta   = nDelta,
                                   pDelta   = pDelta,
+                                  varSP    = varSP,
+                                  rtMax    = rtMax,
                                   control  = control) 
     
   }
@@ -621,6 +646,7 @@ mean.dmcfit <- function(x, ...) {
                      perErr  = mean(perErr),
                      rtErr   = mean(rtErr),
                      sdRtErr = mean(sdRtErr), 
+                     perSlow = mean(perSlow), 
                      .groups = 'drop')
   
   # delta
@@ -694,6 +720,10 @@ calculateCostValue <- function(resTh, resOb) {
   weightCAF <- (1 - weightRT) * 1500
   
   costValue <- (weightCAF * costCAF) + (weightRT * costRT)
+  
+  if (is.na(costValue)) {
+    costValue = Inf;
+  }
   
   message("RMSE: ", round(costValue, 3))
   

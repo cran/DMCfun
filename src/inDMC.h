@@ -1,6 +1,5 @@
 #ifndef CPP_INPUTS_HPP
 #define CPP_INPUTS_HPP
-#include <chrono>
 #include <vector>
 
 struct Prms {
@@ -12,6 +11,7 @@ struct Prms {
     double bnds = 75;
     double resMean = 300;
     double resSD = 30;
+    double rtMax = 5000;
     unsigned long nTrl = 100000;
     unsigned int tmax = 1000;
     bool varSP = false;
@@ -35,5 +35,7 @@ struct Prms {
 };
 
 void print_input_args(Prms &p);
+
+std::vector<double> linspace(int start, int end, int n);
 
 #endif //CPP_INPUTS_HPP
