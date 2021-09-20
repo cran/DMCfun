@@ -9,18 +9,20 @@
   figType = "all",
   subject = NULL,
   legend = TRUE,
+  legendLabels = c(),
   labels = c("Compatible", "Incompatible"),
-  cols = c("black", "green", "red"),
+  cols = c("black", "gray"),
   ltys = c(1, 1),
   pchs = c(1, 1),
   errorBars = FALSE,
   errorBarType = "sd",
-  ylimRt = c(200, 800),
-  ylimEr = c(0, 20),
-  ylimCAF = c(0, 1),
+  ylimRt = NULL,
+  ylimErr = NULL,
+  xlimCDF = NULL,
+  ylimCAF = NULL,
   cafBinLabels = FALSE,
-  ylimDelta = c(-50, 100),
-  xlimDelta = c(200, 1000),
+  ylimDelta = NULL,
+  xlimDelta = NULL,
   xlabs = TRUE,
   ylabs = TRUE,
   xaxts = TRUE,
@@ -38,6 +40,8 @@
 
 \item{legend}{TRUE/FALSE (or FUNCTION) plot legend on each plot}
 
+\item{legendLabels}{legend labels}
+
 \item{labels}{Condition labels c("Compatible", "Incompatible") default}
 
 \item{cols}{Condition colours c("green", "red") default}
@@ -52,7 +56,9 @@
 
 \item{ylimRt}{ylimit for Rt plots}
 
-\item{ylimEr}{ylimit for error rate plots}
+\item{ylimErr}{ylimit for error rate plots}
+
+\item{xlimCDF}{xlimit for CDF plot}
 
 \item{ylimCAF}{ylimit for CAF plot}
 
@@ -75,19 +81,17 @@
 \item{...}{additional plot pars}
 }
 \description{
-Plot results from the output of dmcObservedData. The plot
+Plot delta results from the output of dmcObservedData. The plot
 can be an overall rtCorrect, errorRate, rtErrors, cdf, caf, delta, or all
 of the previous plots.
 }
 \examples{
 \donttest{
 # Example 1
-datFlanker <- dmcObservedData(flankerDataRaw, nDelta = 9)
-datSimon <- dmcObservedData(simonDataRaw, nDelta = 9)
-dat <- dmcCombineObservedData(datFlanker, datSimon)  # combine flanker/simon data
-plot(dat, figType = "delta", xlimDelta = c(200, 700), 
-     cols = c("black", "darkgrey"), pchs = c(1, 2), resetPar = FALSE)  
-legend(200, 0, legend = c("Flanker Task", "Simon Task"), 
+dat <- dmcCombineObservedData(flankerData, simonData)  # combine flanker/simon data
+plot(dat, figType = "delta", xlimDelta = c(200, 700), ylimDelta = c(-20, 80),
+     cols = c("black", "darkgrey"), pchs = c(1, 2), legend = FALSE, resetPar = FALSE)
+legend(200, 80, legend = c("Flanker Task", "Simon Task"),
        col = c("black", "darkgrey"), lty = c(1, 1))
 
 }

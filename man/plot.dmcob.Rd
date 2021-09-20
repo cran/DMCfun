@@ -13,12 +13,14 @@
   cols = c("black", "green", "red"),
   errorBars = FALSE,
   errorBarType = "sd",
-  ylimRt = c(200, 800),
-  ylimEr = c(0, 20),
-  ylimCAF = c(0, 1),
+  ylimRt = NULL,
+  ylimErr = NULL,
+  xlimCDF = NULL,
+  ylimCAF = NULL,
   cafBinLabels = FALSE,
-  ylimDelta = c(-50, 100),
-  xlimDelta = c(200, 1000),
+  ylimDelta = NULL,
+  xlimDelta = NULL,
+  ylimDeltaErrors = NULL,
   xlabs = TRUE,
   ylabs = TRUE,
   xaxts = TRUE,
@@ -30,7 +32,7 @@
 \arguments{
 \item{x}{Output from dmcObservedData}
 
-\item{figType}{summary, rtCorrect, errorRate, rtErrors, cdf, caf, delta, all}
+\item{figType}{summary, rtCorrect, errorRate, rtErrors, cdf, caf, delta, deltaErrors, all}
 
 \item{subject}{NULL (aggregated data across all subjects) or integer for subject number}
 
@@ -46,7 +48,9 @@
 
 \item{ylimRt}{ylimit for Rt plots}
 
-\item{ylimEr}{ylimit for error rate plots}
+\item{ylimErr}{ylimit for error rate plots}
+
+\item{xlimCDF}{xlimit for CDF plot}
 
 \item{ylimCAF}{ylimit for CAF plot}
 
@@ -55,6 +59,8 @@
 \item{ylimDelta}{ylimit for delta plot}
 
 \item{xlimDelta}{xlimit for delta plot}
+
+\item{ylimDeltaErrors}{ylimit for delta plot errors}
 
 \item{xlabs}{TRUE/FALSE}
 
@@ -71,7 +77,7 @@
 \description{
 Plot results from the output of dmcObservedData. The plot
 can be an overall summary, or individual plots (rtCorrect, errorRate,
-rtErrors, cdf, caf, delta, all).
+rtErrors, cdf, caf, delta, deltaErrors, all).
 }
 \examples{
 \donttest{

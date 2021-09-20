@@ -9,6 +9,7 @@ dmcSim(
   tau = 30,
   drc = 0.5,
   bnds = 75,
+  resDist = 1,
   resMean = 300,
   resSD = 30,
   aaShape = 2,
@@ -16,9 +17,10 @@ dmcSim(
   sigm = 4,
   nTrl = 1e+05,
   tmax = 1000,
-  varSP = FALSE,
+  spDist = 0,
   spLim = c(-75, 75),
-  varDR = FALSE,
+  spBias = 0,
+  drDist = 0,
   drShape = 3,
   drLim = c(0.1, 0.7),
   rtMax = 5000,
@@ -26,10 +28,12 @@ dmcSim(
   nTrlData = 5,
   nDelta = 9,
   pDelta = vector(),
+  tDelta = 1,
   nCAF = 5,
   printInputArgs = TRUE,
   printResults = TRUE,
-  setSeed = FALSE
+  setSeed = FALSE,
+  seedValue = 1
 )
 }
 \arguments{
@@ -41,13 +45,15 @@ dmcSim(
 
 \item{bnds}{+- response criterion}
 
-\item{resMean}{mean of non-decisional component}
+\item{resDist}{residual distribution type (1=normal, 2=uniform)}
 
-\item{resSD}{standard deviation of non-decisional component}
+\item{resMean}{residual distribution mean}
+
+\item{resSD}{residual distribution standard deviation}
 
 \item{aaShape}{shape parameter of automatic activation}
 
-\item{spShape}{shape parameter of starting point}
+\item{spShape}{starting point (sp) shape parameter}
 
 \item{sigm}{diffusion constant}
 
@@ -55,25 +61,30 @@ dmcSim(
 
 \item{tmax}{number of time points per trial}
 
-\item{varSP}{true/false variable starting point}
+\item{spDist}{starting point (sp) distribution (0 = constant, 1 = beta, 2 = uniform)}
 
-\item{spLim}{limit range of distribution of starting point}
+\item{spLim}{starting point (sp) range}
 
-\item{varDR}{true/false variable drift rate NB. In DMC, drift rate across trials is always constant.}
+\item{spBias}{starting point (sp) bias}
 
-\item{drShape}{shape parameter of drift rate}
+\item{drDist}{drift rate (dr) distribution type (0 = constant, 1 = beta, 2 = uniform)}
 
-\item{drLim}{limit range of distribution of drift rate}
+\item{drShape}{drift rate (dr) shape parameter}
+
+\item{drLim}{drift rate (dr) range}
 
 \item{rtMax}{limit on simulated RT (decision + non-decisional component)}
 
-\item{fullData}{TRUE/FALSE (Default: FALSE)}
+\item{fullData}{TRUE/FALSE (Default: FALSE) NB. only required when plotting activation
+function and/or individual trials}
 
 \item{nTrlData}{Number of trials to plot}
 
-\item{nDelta}{Number of delta bins}
+\item{nDelta}{number of delta bins}
 
-\item{pDelta}{Alternative to nDelta by directly specifying required percentile values}
+\item{pDelta}{alternative to nDelta by directly specifying required percentile values (0-100)}
+
+\item{tDelta}{type of delta calculation (1=direct percentiles points, 2=percentile bounds (tile) averaging)}
 
 \item{nCAF}{Number of CAF bins}
 
@@ -81,7 +92,9 @@ dmcSim(
 
 \item{printResults}{TRUE/FALSE}
 
-\item{setSeed}{TRUE/FALSE}
+\item{setSeed}{TRUE/FALSE If true, set seed to seed value}
+
+\item{seedValue}{1}
 }
 \value{
 dmcsim
@@ -103,9 +116,9 @@ Cognitive Psychology, 78, 148-174. This function is essentially a wrapper around
 \examples{
 \donttest{
 # Example 1
-dmc <- dmcSim(fullData = TRUE)  # full data only required for activation plot (top left)
+dmc <- dmcSim(fullData = TRUE)  # fullData only required for activation/trials (top/bottom left)
 plot(dmc)
-dmc <- dmcSim() # faster
+dmc <- dmcSim() # faster!
 plot(dmc)
 
 # Example 2
@@ -117,11 +130,11 @@ dmc <- dmcSim(tau = 90)
 plot(dmc)
 
 # Example 4
-dmc <- dmcSim(varSP = TRUE)
+dmc <- dmcSim(spDist = 1)
 plot(dmc, "delta")
 
 # Example 5
-dmc <- dmcSim(tau = 130, varDR = TRUE)
+dmc <- dmcSim(tau = 130, drDist = 1)
 plot(dmc, "caf")
 
 # Example 6

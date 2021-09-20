@@ -2,7 +2,7 @@
 % Please edit documentation in R/dmcFit.R
 \name{dmcFit}
 \alias{dmcFit}
-\title{dmcFit: Fit DMC to aggregated data using R-package optimr (Nelder-Mead)}
+\title{dmcFit: Fit DMC to aggregated data using optim (Nelder-Mead)}
 \usage{
 dmcFit(
   resOb,
@@ -17,57 +17,75 @@ dmcFit(
   nCAF = 5,
   nDelta = 19,
   pDelta = vector(),
-  varSP = TRUE,
+  tDelta = 1,
+  spDist = 1,
+  drDist = 0,
+  drShape = 3,
+  drLim = c(0.1, 0.7),
   rtMax = 5000,
+  costFunction = "RMSE",
   printInputArgs = TRUE,
   printResults = FALSE,
-  maxit = 500
+  optimControl = list()
 )
 }
 \arguments{
-\item{resOb}{Observed data (see flankerData and simonTask for data format)}
+\item{resOb}{Observed data (see flankerData and simonTask for data format) and the function dmcObservedData to create
+the required input from either an R data frame or external *.txt/*.csv files}
 
 \item{nTrl}{Number of trials to use within dmcSim.}
 
-\item{startVals}{Starting values for to-be estimated parameters. This is a list with values specified individually for
-amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, sigm (e.g., startVals = list(amp = 20, tau = 200, drc = 0.5, bnds = 75, resMean = 300,
-resSD = 30, aaShape = 2, spShape = 3, sigm = 4)).}
+\item{startVals}{Starting values for to-be estimated parameters. This is a list with values specified individually
+for amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., startVals = list(amp = 20, tau = 200,
+drc = 0.5, bnds = 75, resMean = 300, resSD = 30, aaShape = 2, spShape = 3, spBias = 0, sigm = 4)).}
 
-\item{minVals}{Minimum values for the to-be estimated parameters. This is a list with values specified individually for
-amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, sigm (e.g., minVals = list(amp = 10, tau = 5, drc = 0.1, bnds = 20, resMean = 200,
-resSD = 5, aaShape = 1, spShape = 2, sigm = 1)).}
+\item{minVals}{Minimum values for the to-be estimated parameters. This is a list with values specified individually
+for amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., minVals = list(amp = 10, tau = 5, drc = 0.1,
+bnds = 20, resMean = 200, resSD = 5, aaShape = 1, spShape = 2, spBias = -20, sigm = 1)).}
 
-\item{maxVals}{Maximum values for the to-be estimated parameters. This is a list with values specified individually for
-amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, sigm (e.g., maxVals = list(amp = 40, tau = 300, drc = 1.0, bnds = 150, resMean = 800,
-resSD = 100, aaShape = 3, spShape = 4, sigm = 10))}
+\item{maxVals}{Maximum values for the to-be estimated parameters. This is a list with values specified individually
+for amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., maxVals = list(amp = 40, tau = 300, drc = 1.0,
+bnds = 150, resMean = 800, resSD = 100, aaShape = 3, spShape = 4, spBias = 20, sigm = 10))}
 
 \item{fixedFit}{Fix parameter to starting value. This is a list with bool values specified individually for
-amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, sigm (e.g., fixedFit = list(amp = F, tau = F, drc = F, bnds = F, resMean = F,
-resSD = F, aaShape = F, spShape = F, sigm = T))}
+amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., fixedFit = list(amp = F, tau = F, drc = F,
+bnds = F, resMean = F, resSD = F, aaShape = F, spShape = F, spBias = T, sigm = T))}
 
 \item{fitInitialGrid}{TRUE/FALSE}
 
-\item{fitInitialGridN}{10 reduce if searching more than 1 initial parameter}
+\item{fitInitialGridN}{10 linear steps between parameters min/max values (reduce if searching more than ~2/3 initial parameters)}
 
-\item{fixedGrid}{Fix parameter for initial grid search.  This is a list with bool values specified individually for
-amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, sigm (e.g., fixedGrid = list(amp = T, tau = F, drc = T, bnds = T, resMean = T,
-resSD = T, aaShape = T, spShape = T, sigm = T))}
+\item{fixedGrid}{Fix parameter for initial grid search. This is a list with bool values specified individually for
+amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., fixedGrid = list(amp = T, tau = F, drc = T,
+bnds = T, resMean = T, resSD = T, aaShape = T, spShape = T, spBias = T, sigm = T)). As a default, the initial gridsearch
+only searches the tau space.}
 
-\item{nCAF}{Number of CAF bins.}
+\item{nCAF}{The number of CAF bins.}
 
-\item{nDelta}{Number of delta bins.}
+\item{nDelta}{The number of delta bins.}
 
-\item{pDelta}{Alternative to nDelta by directly specifying required percentile values}
+\item{pDelta}{An alternative option to nDelta by directly specifying required percentile values (vector of values 0-100)}
 
-\item{varSP}{Variable starting point TRUE/FALSE}
+\item{tDelta}{The type of delta calculation (1=direct percentiles points, 2=percentile bounds (tile) averaging)}
 
-\item{rtMax}{limit on simulated RT (decision + non-decisional component)}
+\item{spDist}{The starting point (sp) distribution (0 = constant, 1 = beta, 2 = uniform)}
 
-\item{printInputArgs}{TRUE/FALSE}
+\item{drDist}{The drift rate (dr) distribution type (0 = constant, 1 = beta, 2 = uniform)}
 
-\item{printResults}{TRUE/FALSE}
+\item{drShape}{The drift rate (dr) shape parameter}
 
-\item{maxit}{The maximum number of iterations (Default: 500)}
+\item{drLim}{The drift rate (dr) range}
+
+\item{rtMax}{The limit on simulated RT (decision + non-decisional components)}
+
+\item{costFunction}{The cost function to minimise: root mean square error ("RMSE": default),
+squared percentage error ("SPE"), or likelihood-ratio chi-square statistic ("GS")}
+
+\item{printInputArgs}{TRUE (default) /FALSE}
+
+\item{printResults}{TRUE/FALSE (default)}
+
+\item{optimControl}{Additional control parameters passed to optim (see optim details section)}
 }
 \value{
 dmcfit
@@ -77,39 +95,47 @@ is accessed with obj$name with the the following:
 \item{obj$means}{Condition means for reaction time and error rate}
 \item{obj$caf}{Accuracy per bin for compatible and incompatible trials}
 \item{obj$delta}{Mean RT and compatibility effect per bin}
-\item{obj$sim}{Individual trial data points (reaction times/error) and activation vectors from simulation}
-\item{obj$par}{The fitted model parameters + final RMSE of the fit}
+\item{obj$sim}{Individual trial data points (RTs for all trial types e.g., correct/error trials) and activation
+vectors from the simulation}
+\item{obj$par}{The fitted model parameters + final cost value of the fit}
 }
 \description{
 Fit theoretical data generated from dmcSim to observed data by
-minimizing the root-mean-square error (RMSE) between a weighted combination
-of the CAF and CDF functions using the R-package optimr (Nelder-Mead).
+minimizing the root-mean-square error ("RMSE") between a weighted combination
+of the CAF and CDF functions using optim (Nelder-Mead). Alternative cost functions
+include squared percentage error ("SPE"), and g-squared statistic ("GS").
 }
 \examples{
 \donttest{
 # Example 1: Flanker data from Ulrich et al. (2015)
-fit <- dmcFit(flankerData)  # only initial search tau
+fit <- dmcFit(flankerData) # only initial search tau
 plot(fit, flankerData)
 summary(fit)
 
 # Example 2: Simon data from Ulrich et al. (2015)
-fit <- dmcFit(simonData)    # only initial search tau
+fit <- dmcFit(simonData) # only initial search tau
 plot(fit, simonData)
 summary(fit)
 
 # Example 3: Flanker data from Ulrich et al. (2015) with non-default
 # start vals and some fixed values
 fit <- dmcFit(flankerData,
-              startVals = list(drc = 0.6, aaShape = 2.5),
-              fixedFit = list(drc = TRUE, aaShape = TRUE))
+  startVals = list(drc = 0.6, aaShape = 2.5),
+  fixedFit = list(drc = TRUE, aaShape = TRUE)
+)
 
 # Example 4: Simulated Data (+ve going delta function)
 dat <- createDF(nSubjects = 20, nTrl = 500, design = list("Comp" = c("comp", "incomp")))
 dat <- addDataDF(dat,
-                 RT = list("Comp_comp"   = c(510, 100, 100),
-                           "Comp_incomp" = c(540, 130, 85)),
-                 Error = list("Comp_comp"   = c(4, 3, 2, 1, 1),
-                              "Comp_incomp" = c(20, 4, 3, 1, 1)))
+  RT = list(
+    "Comp_comp" = c(510, 100, 100),
+    "Comp_incomp" = c(540, 130, 85)
+  ),
+  Error = list(
+    "Comp_comp" = c(4, 3, 2, 1, 1),
+    "Comp_incomp" = c(20, 4, 3, 1, 1)
+  )
+)
 datOb <- dmcObservedData(dat, columns = c("Subject", "Comp", "RT", "Error"))
 plot(datOb)
 fit <- dmcFit(datOb, nTrl = 5000)

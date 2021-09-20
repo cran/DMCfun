@@ -2,16 +2,19 @@
 
   # CRAN Note avoidance
   # https://stackoverflow.com/questions/9439256/how-can-i-handle-r-cmd-check-no-visible-binding-for-global-variable-notes-when#comment20826625_12429344
-  # adapted from linked-to grattan package from the above webpage
+  # adapted from linked-to grattan package from the above link
 
   utils::globalVariables(
-    c("Bin", "N", "RMSE", "aaShape", "accPer", "amp", "bin", "bnds", 
-      "comp",  "deltaCI", "drc", "i", "incomp", "meanBin", "meanCI", "meanComp", "mEffect", "meanEffect", 
-      "meanIncomp", ".",  "perErr", "resMean", "resSD", "resMax", "rtCor",  "rtErr", "sdEffect", "sdPerErr", 
-      "sdRtCor", "sdRtErr", "perSlow", "sigm", "spShape", "tau", "Comp", "Error", "RT", "Subject", 
-      "errs", "nCor", "nErr", "nOut", "rtC", "rtE", "perE", "rtCor", "rts") 
+    c(names(DMCfun::flankerData$data),
+      names(DMCfun::flankerData$summary),
+      names(DMCfun::flankerData$delta),
+      names(DMCfun::flankerData$caf),
+      ".", "Effect", "aaShape", "accPer", "amp", "bnds", "comp",
+      "cost", "drc", "effect", "incomp", "N", "nCor", "nErr", "per", "perSlow",
+      "perE", "resMean", "resSD", "rtC", "rtE", "sigm", "spBias", "spShape", "tau",
+      "nTrials", "prob", "boundary", "outlier", "Subject", "Error", "RT")
   )
-  invisible()
+
 }
 
 .onUnload <- function(libpath) {

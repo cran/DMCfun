@@ -3,8 +3,7 @@
 \docType{data}
 \name{simonData}
 \alias{simonData}
-\title{A summarised dataset: see raw data file simonDataRaw and dmcObservedData.R
-This is the summarised Simon Task data from Ulrich et al. (2015)}
+\title{A summarised dataset: This is the simon task data from Ulrich et al. (2015)}
 \format{
 dmcob
 }
@@ -13,14 +12,16 @@ simonData
 }
 \description{
 \itemize{
-  \item $summary --> Reaction time correct, standard deviation correct, percentage
-  error, reaction time incorrect, and standard deviation for incorrect trials
-  for both compatible and incompatible trials
+  \item $summary --> Reaction time correct, standard deviation correct, standard error correct,
+  percentage error, standard deviation error, standard error error, reaction time incorrect,
+  standard deviation incorrect, and standard error incorrect trials for both compatible
+  and incompatible trials
   \item $caf --> Proportion correct for compatible and incompatible trials across
   5 bins
   \item $delta --> Compatible reactions times, incompatible mean reaction times,
-  mean reaction times, incompatible - compatible reaction times (delta), and
-  standard deviation + standard error of this difference across 10 bins.
+  mean reaction times, incompatible - compatible reaction times (effect), and
+  standard deviation + standard error of this effect across 19 bins
+  \item $data --> Raw data from simonData.txt + additional outlier column
 }
 }
 \keyword{datasets}

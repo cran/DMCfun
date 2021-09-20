@@ -7,12 +7,18 @@
 \method{plot}{dmcsim}(
   x,
   figType = "summary1",
-  ylimCAF = c(0, 1),
+  xlimActivation = NULL,
+  xlimTrials = NULL,
+  xlimPDF = NULL,
+  ylimPDF = NULL,
+  xlimCDF = NULL,
+  ylimCAF = NULL,
   cafBinLabels = FALSE,
-  ylimDelta = c(-50, 150),
+  ylimDelta = NULL,
   xlimDelta = NULL,
-  ylimRt = c(200, 800),
-  ylimErr = c(0, 20),
+  ylimDeltaErrors = NULL,
+  ylimRt = NULL,
+  ylimErr = NULL,
   legend = TRUE,
   labels = c("Compatible", "Incompatible"),
   cols = c("black", "green", "red"),
@@ -28,7 +34,18 @@
 \arguments{
 \item{x}{Output from dmcSim}
 
-\item{figType}{summary1, summary2, summary3, activation, trials, pdf, cdf, caf, delta, rtCorrect, rtErrors, errorRate, all}
+\item{figType}{summary1, summary2, summary3, activation, trials, pdf, cdf,
+caf, delta, rtCorrect, rtErrors, errorRate, all}
+
+\item{xlimActivation}{xlimit for activation plot}
+
+\item{xlimTrials}{xlimit for trials plot}
+
+\item{xlimPDF}{xlimit for PDF plot}
+
+\item{ylimPDF}{ylimit for PDF plot}
+
+\item{xlimCDF}{xlimit for CDF plot}
 
 \item{ylimCAF}{ylimit for CAF plot}
 
@@ -37,6 +54,8 @@
 \item{ylimDelta}{ylimit for delta plot}
 
 \item{xlimDelta}{xlimit for delta plot (Default is 0 to tmax)}
+
+\item{ylimDeltaErrors}{ylimit for delta plot of errors}
 
 \item{ylimRt}{ylimit for rt plot}
 

@@ -23,9 +23,9 @@ test_that("dmcSim2", {
 
   testthat::expect_equal(421, round(dat$summary$rtCor[1]))     # rt correct
   testthat::expect_equal(90,  round(dat$summary$sdRtCor[1]))   # sd correct
-  testthat::expect_equal(0.3, round(dat$summary$perErr[1], 1)) # percentage errors
+  testthat::expect_equal(0.2, round(dat$summary$perErr[1], 1)) # percentage errors
   testthat::expect_equal(484, round(dat$summary$rtCor[2]))     # rt correct
-  testthat::expect_equal(103, round(dat$summary$sdRtCor[2]))   # sd correct
+  testthat::expect_equal(102, round(dat$summary$sdRtCor[2]))   # sd correct
   testthat::expect_equal(2.2, round(dat$summary$perErr[2], 1)) # percentage errors
 
 })
@@ -49,14 +49,14 @@ test_that("dmcSim4", {
 
   # Simulation 3 (Figure 6)
   # amp = 20, tau = 30, mu = 0.5, sigm = 4, bnds = 75, resMean = 300, resSD = 30
-  dat <- dmcSim(varSP = TRUE, printInputArgs = FALSE, printResults = FALSE, setSeed = TRUE)
+  dat <- dmcSim(spDist = 1, printInputArgs = FALSE, printResults = FALSE, setSeed = TRUE)
 
-  testthat::expect_equal(435, round(dat$summary$rtCor[1]))     # rt correct
+  testthat::expect_equal(436, round(dat$summary$rtCor[1]))     # rt correct
   testthat::expect_equal(117, round(dat$summary$sdRtCor[1]))   # sd correct
   testthat::expect_equal(1.9, round(dat$summary$perErr[1], 1)) # percentage errors
   testthat::expect_equal(452, round(dat$summary$rtCor[2]))     # rt correct
   testthat::expect_equal(100, round(dat$summary$sdRtCor[2]))   # sd correct
-  testthat::expect_equal(6.8, round(dat$summary$perErr[2], 1)) # percentage errors
+  testthat::expect_equal(6.9, round(dat$summary$perErr[2], 1)) # percentage errors
 
 })
 
@@ -64,12 +64,12 @@ test_that("dmcSim5", {
 
   # Simulation 3 (Figure 7)
   # amp = 20, tau = 30, mu = 0.5, sigm = 4, bnds = 75, resMean = 300, resSD = 30
-  dat <- dmcSim(varDR = TRUE, printInputArgs = FALSE, printResults = FALSE, setSeed = TRUE)
+  dat <- dmcSim(drDist = 1, printInputArgs = FALSE, printResults = FALSE, setSeed = TRUE)
 
   testthat::expect_equal(477, round(dat$summary$rtCor[1]))     # rt correct
-  testthat::expect_equal(145, round(dat$summary$sdRtCor[1]))   # sd correct
+  testthat::expect_equal(146, round(dat$summary$sdRtCor[1]))   # sd correct
   testthat::expect_equal(3.1, round(dat$summary$perErr[1], 1)) # percentage errors
-  testthat::expect_equal(494, round(dat$summary$rtCor[2]))     # rt correct
+  testthat::expect_equal(495, round(dat$summary$rtCor[2]))     # rt correct
   testthat::expect_equal(134, round(dat$summary$sdRtCor[2]))   # sd correct
   testthat::expect_equal(4.1, round(dat$summary$perErr[2], 1)) # percentage errors
 
@@ -85,9 +85,9 @@ test_that("dmcSim5", {
 
 test_that("dmcSim6", {
 
-  amp = 20
-  drc = 0.5
-  
+  amp <- 20
+  drc <- 0.5
+
   dmc <- dmcSim(amp = amp, drc = drc)
 
   testthat::expect_equal(dmc$prms$amp, 20)
@@ -95,3 +95,24 @@ test_that("dmcSim6", {
 
 })
 
+test_that("dmcSim7", {
+
+  dmc <- dmcSim(pDelta = c(10, 30, 50, 70, 90))
+  testthat::expect_equal(nrow(dmc$delta), 5)
+
+  dmc <- dmcSim(pDelta = seq(10, 90, 10), tDelta = 2)
+  testthat::expect_equal(nrow(dmc$delta), 10)
+
+})
+
+test_that("dmcSim8", {
+
+  params <- list(amp = seq(10, 20, 10))
+  dmc    <- dmcSims(params)
+  testthat::expect_equal(length(dmc), 2)
+
+  params <- list(amp = seq(10, 20, 5), tau = c(50, 100, 150), nTrl = 10000)
+  dmc    <- dmcSims(params)
+  testthat::expect_equal(length(dmc), 9)
+
+})

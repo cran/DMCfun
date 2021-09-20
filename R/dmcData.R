@@ -1,14 +1,15 @@
-#' A summarised dataset: see raw data file flankerDataRaw and dmcObservedData.R
-#' This is the summarised Flanker Task data from Ulrich et al. (2015)
+#' A summarised dataset: This is the flanker task data from Ulrich et al. (2015)
 #'
 #' \itemize{
-#'   \item $summary --> Reaction time correct, standard deviation correct, percentage
-#'   error, reaction time incorrect, and standard deviation for incorrect trials
-#'   for both compatible and incompatible trials
+#'   \item $summary --> Reaction time correct, standard deviation correct, standard error correct,
+#'   percentage error, standard deviation error, standard error error, reaction time incorrect,
+#'   standard deviation incorrect, and standard error incorrect trials for both compatible
+#'   and incompatible trials
 #'   \item $caf --> Proportion correct for compatible and incompatible trials across 5 bins
 #'   \item $delta --> Compatible reactions times, incompatible mean reaction times,
-#'   mean reaction times, incompatible - compatible reaction times (delta), and
-#'   standard deviation + standard error of this difference across 10 bins.
+#'   mean reaction times, incompatible - compatible reaction times (effect), and
+#'   standard deviation + standard error of this effect across 19 bins
+#'   \item $data --> Raw data from flankerData.txt + additional outlier column
 #' }
 #'
 #' @docType data
@@ -19,36 +20,19 @@
 NULL
 
 
-
-#' Raw flanker data from Ulrich et al. (2015)
+#' A summarised dataset: This is the simon task data from Ulrich et al. (2015)
 #'
 #' \itemize{
-#'   \item Subject Subject number
-#'   \item Comp comp vs. incomp
-#'   \item RT
-#'   \item Error 0 = correct, 1 = error
-#' }
-#'
-#' @docType data
-#' @keywords datasets
-#' @name flankerDataRaw
-#' @usage flankerDataRaw
-NULL
-
-
-
-#' A summarised dataset: see raw data file simonDataRaw and dmcObservedData.R
-#' This is the summarised Simon Task data from Ulrich et al. (2015)
-#'
-#' \itemize{
-#'   \item $summary --> Reaction time correct, standard deviation correct, percentage
-#'   error, reaction time incorrect, and standard deviation for incorrect trials
-#'   for both compatible and incompatible trials
+#'   \item $summary --> Reaction time correct, standard deviation correct, standard error correct,
+#'   percentage error, standard deviation error, standard error error, reaction time incorrect,
+#'   standard deviation incorrect, and standard error incorrect trials for both compatible
+#'   and incompatible trials
 #'   \item $caf --> Proportion correct for compatible and incompatible trials across
 #'   5 bins
 #'   \item $delta --> Compatible reactions times, incompatible mean reaction times,
-#'   mean reaction times, incompatible - compatible reaction times (delta), and
-#'   standard deviation + standard error of this difference across 10 bins.
+#'   mean reaction times, incompatible - compatible reaction times (effect), and
+#'   standard deviation + standard error of this effect across 19 bins
+#'   \item $data --> Raw data from simonData.txt + additional outlier column
 #' }
 #'
 #' @docType data
@@ -57,24 +41,6 @@ NULL
 #' @usage simonData
 #' @format dmcob
 NULL
-
-
-
-#' Raw simon data from Ulrich et al. (2015)
-#'
-#' \itemize{
-#'   \item Subject Subject number
-#'   \item Comp comp vs. incomp
-#'   \item RT
-#'   \item Error 0 = correct, 1 = error
-#' }
-#'
-#' @docType data
-#' @keywords datasets
-#' @name simonDataRaw
-#' @usage simonDataRaw
-NULL
-
 
 
 #' @title createDF: Create a simulated dataframe
@@ -95,7 +61,7 @@ NULL
 #' dat <- createDF(nSubjects = 50, nTrl = 50, design = list("Comp" = c("comp", "incomp")))
 #'
 #' # Example 3
-#' dat <- createDF(nSubjects = 50, nTrl = 50, design = list("Comp" = c("comp", "incomp"), 
+#' dat <- createDF(nSubjects = 50, nTrl = 50, design = list("Comp" = c("comp", "incomp"),
 #'                                                          "Side" = c("left", "right", "middle")))
 #'
 #' @export
@@ -188,14 +154,14 @@ addDataDF <- function(dat, RT=NULL, Error=NULL) {
     dat$RT <- rtDist(n = nrow(dat), RT[1], RT[2], RT[3])
   } else if (!is.null(RT) & is.list(RT)) {
 
-    for (i in c(1:length(RT))) {
+    for (i in seq_along(RT)) {
 
       fcts_levls <- unlist(strsplit(names(RT[i]),  split = "_"))
       fcts       <- unlist(strsplit(fcts_levls[1], split = ":"))
       levls      <- unlist(strsplit(fcts_levls[2], split = ":"))
 
       idx <- NULL
-      for (fct in c(1:length(fcts))) {
+      for (fct in seq_along(fcts)) {
         idx <- cbind(idx, dat[fcts[fct]] == levls[fct])
       }
       idx         <- apply(idx, 1, all)
@@ -214,20 +180,20 @@ addDataDF <- function(dat, RT=NULL, Error=NULL) {
     dat$Error <- errDist(n = nrow(dat), Error)
   } else if (!is.null(Error) & is.list(Error)) {
 
-    for (i in c(1:length(Error))) {
+    for (i in seq_along(Error)) {
 
       fcts_levls <- unlist(strsplit(names(Error[i]), split = "_"))
       fcts       <- unlist(strsplit(fcts_levls[1],   split = ":"))
       levls      <- unlist(strsplit(fcts_levls[2],   split = ":"))
 
       idx <- NULL
-      for (fct in c(1:length(fcts))) {
+      for (fct in seq_along(fcts)) {
         idx <- cbind(idx, dat[fcts[fct]] == levls[fct])
       }
       idx <- apply(idx, 1, all)
 
       dat$bins[idx] <- dplyr::ntile(dat$RT[idx], length(Error[[1]]))
-      for (bin in 1:length(Error[[1]])) {
+      for (bin in seq_along(Error[[1]])) {
         idx_bin <- dat$bins == bin & idx
         dat$Error[idx_bin] <- errDist(n = sum(idx_bin), Error[[i]][bin])
       }
@@ -236,7 +202,7 @@ addDataDF <- function(dat, RT=NULL, Error=NULL) {
   }
 
   if ("bins" %in% names(dat)) {
-    dat <- dat[ , -which(names(dat) %in% c("bins"))]
+    dat <- dat[, -which(names(dat) %in% c("bins"))]
   }
 
   return(dat)
@@ -245,36 +211,36 @@ addDataDF <- function(dat, RT=NULL, Error=NULL) {
 
 
 
-#' @title dmcObservedData: Run standard analyses on observed data
+#' @title dmcObservedData: Run standard analyses on observed raw data
 #'
-#' @description Basic example analysis script to create data object required
-#' for observed data. Example raw *.txt files are flankerData.txt and simonData.txt. There
-#' are four critical columns:
+#' @description Basic analysis to create data object required for observed data.
+#' Example raw *.txt files are flankerData.txt and simonData.txt. There are four critical columns:
 #' A column containing subject number
 #' A column coding for compatible or incompatible
 #' A column with RT (in ms)
 #' A column indicating of the response was correct
-#' @param dat Text file(s) containing the observed data or an R DataFrame (see createDF/addDataDF)
-#' @param nCAF Number of CAF bins. 
-#' @param nDelta Number of delta bins. 
+#' @param dat A text file(s) containing the observed data or an R DataFrame (see createDF/addDataDF)
+#' @param nCAF The number of CAF bins.
+#' @param nDelta The number of delta bins.
+#' @param pDelta An alternative option to nDelta by directly specifying required percentile values (vector of values 0-100)
+#' @param tDelta The type of delta calculation (1=direct percentiles points, 2=percentile bounds (tile) averaging)
 #' @param outlier Outlier limits in ms (e.g., c(200, 1200))
 #' @param columns Name of required columns DEFAULT = c("Subject", "Comp", "RT", "Error")
 #' @param compCoding Coding for compatibility DEFAULT = c("comp", "incomp")
 #' @param errorCoding Coding for errors DEFAULT = c(0, 1))
 #' @param quantileType Argument (1-9) from R function quantile specifying the algorithm (?quantile)
+#' @param keepRaw TRUE/FALSE
 #' @param delim Single character used to separate fields within a record if reading from external text file.
-#' @param skip Number of lines to skip before reading data if reading from external text file.
+#' @param skip The number of lines to skip before reading data if reading from external text file.
 #'
 #' @return DataFrame
 #'
 #' @examples
 #' # Example 1
 #' plot(flankerData)  # flanker data from Ulrich et al. (2015)
-#'
-#' # Example 2
 #' plot(simonData)    # simon data from Ulrich et al. (2015)
 #'
-#' # Example 3 (Basic behavioural analysis from Ulrich et al. 2015)
+#' # Example 2 (Basic behavioural analysis from Ulrich et al. 2015)
 #' flankerDat <- cbind(Task = "flanker", flankerData$summarySubject)
 #' simonDat   <- cbind(Task = "simon",   simonData$summarySubject)
 #' datAgg     <- rbind(flankerDat, simonDat)
@@ -291,7 +257,7 @@ addDataDF <- function(dat, RT=NULL, Error=NULL) {
 #' summary(aovRt)
 #' model.tables(aovRt, type = "mean")
 #'
-#' # Example 4
+#' # Example 3
 #' dat <- createDF(nSubjects = 50, nTrl = 500, design = list("Comp" = c("comp", "incomp")))
 #' dat <- addDataDF(dat,
 #'                  RT = list("Comp_comp"    = c(500, 75, 120),
@@ -302,7 +268,7 @@ addDataDF <- function(dat, RT=NULL, Error=NULL) {
 #' plot(datOb)
 #' plot(datOb, subject = 1)
 #'
-#' # Example 5
+#' # Example 4
 #' dat <- createDF(nSubjects = 50, nTrl = 500, design = list("Congruency" = c("cong", "incong")))
 #' dat <- addDataDF(dat,
 #'                  RT = list("Congruency_cong"   = c(500, 75, 100),
@@ -317,15 +283,18 @@ addDataDF <- function(dat, RT=NULL, Error=NULL) {
 #'
 #' @export
 dmcObservedData <- function(dat,
-                            nCAF = 5,
-                            nDelta = 19,
-                            outlier = c(200, 1200),
-                            columns = c("Subject", "Comp", "RT", "Error"),
-                            compCoding = c("comp", "incomp"),
-                            errorCoding = c(0, 1),
+                            nCAF         = 5,
+                            nDelta       = 19,
+                            pDelta       = vector(),
+                            tDelta       = 1,
+                            outlier      = c(200, 1200),
+                            columns      = c("Subject", "Comp", "RT", "Error"),
+                            compCoding   = c("comp", "incomp"),
+                            errorCoding  = c(0, 1),
                             quantileType = 5,
-                            delim = "\t",
-                            skip = 0) {
+                            keepRaw      = FALSE,
+                            delim        = "\t",
+                            skip         = 0) {
 
   # if dat external file(s)
   if (is.character(dat)) {
@@ -338,7 +307,7 @@ dmcObservedData <- function(dat,
     stop("dat does not contain required/requested columns!")
   }
   if (any(names(dat) != c("Subject", "Comp", "RT", "Error"))) {
-    names(dat) = c("Subject", "Comp", "RT", "Error")
+    names(dat) <- c("Subject", "Comp", "RT", "Error")
   }
 
   # create default column values for comp and error coding
@@ -349,12 +318,11 @@ dmcObservedData <- function(dat,
     dat$Error <- ifelse(dat$Error == errorCoding[1], 0, 1)
   }
 
-  rtMin  <- outlier[1]
-  rtMax  <- outlier[2]
+  # add column for outliers
+  dat$outlier <- ifelse(dat$RT <= outlier[1] | dat$RT >= outlier[2], 1, 0)
 
   # aggregate data across trials within subjects
   datSubject <- dat %>%
-    dplyr::mutate(outlier = RT <= rtMin | RT >= rtMax) %>%
     dplyr::group_by(Subject, Comp) %>%
     dplyr::summarize(N       = n(),
                      nCor    = sum(Error == 0),
@@ -362,8 +330,8 @@ dmcObservedData <- function(dat,
                      nOut    = sum(outlier),
                      rtCor   = mean(RT[Error == 0 & outlier == 0]),
                      rtErr   = mean(RT[Error == 1 & outlier == 0]),
-                     perErr  = (nErr/(nErr + nCor))*100,
-                     .groups = 'drop')
+                     perErr  = (nErr / (nErr + nCor)) * 100,
+                     .groups = "drop")
 
   # aggregate data across subjects
   datAgg <- datSubject %>%
@@ -372,64 +340,90 @@ dmcObservedData <- function(dat,
                   perE = perErr) %>%
     dplyr::group_by(Comp) %>%
     dplyr::summarize(N        = n(),
-                     NCor     = sum(nCor),
-                     NErr     = sum(nErr),
-                     NOut     = sum(nOut),
                      rtCor    = mean(rtC, na.rm = TRUE),
                      sdRtCor  = sd(rtC, na.rm = TRUE),
-                     seRtCor  = sdRtCor/sqrt(N),
+                     seRtCor  = sdRtCor / sqrt(N),
                      rtErr    = mean(rtE, na.rm = TRUE),
                      sdRtErr  = sd(rtE, na.rm = TRUE),
-                     seRtErr  = sdRtErr/sqrt(N),
+                     seRtErr  = sdRtErr / sqrt(N),
                      perErr   = mean(perE, na.rm = TRUE),
                      sdPerErr = sd(perE, na.rm = TRUE),
-                     sePerErr = sdPerErr/sqrt(N),
-                     .groups  = 'drop')
+                     sePerErr = sdPerErr / sqrt(N),
+                     .groups  = "drop")
 
   # conditional accuracy functions (CAF)
   datSubject_caf <- dat %>%
-    dplyr::filter(RT >= rtMin, RT <= rtMax) %>%
+    dplyr::filter(outlier == 0) %>%
     calculateCAF(., nCAF = nCAF)
 
   datAgg_caf <- datSubject_caf %>%
-    dplyr::group_by(Comp, bin) %>%
-    dplyr::summarize(accPer  = mean(accPer),
-                     .groups = 'drop')
+    dplyr::group_by(Bin) %>%
+    dplyr::summarize(accPerComp   = mean(comp),
+                     accPerIncomp = mean(incomp),
+                     meanEffect   = mean(effect),
+                     sdEffect     = sd(effect),
+                     seEffect     = sdEffect/sqrt(n()),
+                     .groups      = "drop")
+
+  # change nDelta to length of pDelta if pDelta not empty
+  if (length(pDelta) != 0) {
+    nDelta <- length(pDelta)
+  }
 
   # DELTA
   datSubject_dec <- dat %>%
-    dplyr::filter(Error == 0, RT >= rtMin, RT <= rtMax) %>%
-    calculateDelta(., nDelta = nDelta)
+    dplyr::filter(Error == 0, outlier == 0) %>%
+    calculateDelta(., nDelta = nDelta, tDelta = tDelta, quantileType = quantileType)
+
+  datSubject_dec_errors <- dat %>%
+    dplyr::filter(Error == 1, outlier == 0) %>%
+    calculateDelta(., nDelta = nDelta, tDelta = tDelta, quantileType = quantileType)
 
   datAgg_dec <- datSubject_dec %>%
-    dplyr::mutate(mEffect = meanEffect) %>%
-    dplyr::group_by(bin) %>%
-    dplyr::summarize(meanComp   = mean(meanComp),
-                     meanIncomp = mean(meanIncomp),
+    dplyr::group_by(Bin) %>%
+    dplyr::summarize(meanComp   = mean(comp),
+                     meanIncomp = mean(incomp),
                      meanBin    = mean(meanBin),
-                     meanEffect = mean(mEffect),
-                     sdEffect   = sd(mEffect),
-                     seEffect   = sdEffect/sqrt(n()),
-                     .groups    = 'drop')
+                     meanEffect = mean(Effect),
+                     sdEffect   = sd(Effect),
+                     seEffect   = sdEffect / sqrt(n()),
+                     .groups    = "drop")
+
+  datAgg_dec_errors <- datSubject_dec_errors %>%
+    dplyr::group_by(Bin) %>%
+    dplyr::summarize(meanComp   = mean(comp, na.rm = TRUE),
+                     meanIncomp = mean(incomp, na.rm = TRUE),
+                     meanBin    = mean(Bin, na.rm = TRUE),
+                     meanEffect = mean(Effect, na.rm = TRUE),
+                     sdEffect   = sd(Effect, na.rm = TRUE),
+                     seEffect   = sdEffect / sqrt(n()),
+                     .groups    = "drop")
 
   ##############################################################################
   # save results
   obj <- list()
 
+  if (keepRaw) {
+    obj$data <- dat
+  }
+
   # summary
-  obj$summarySubject        <- as.data.frame(datSubject[ , c(1, 2, 7, 9, 8)])
-  names(obj$summarySubject) <- c("Subject", "Comp", "rtCor", "perErr", "rtErr")
-  obj$summary               <- as.data.frame(datAgg[ , c(1, 6, 7, 8, 12, 13, 14, 9, 10, 11)])
+  obj$summarySubject <- as.data.frame(datSubject[, c(1, 2, 7, 9, 8)])
+  obj$summary        <- as.data.frame(datAgg[, c(1, 3, 4, 5, 9, 10, 11, 6, 7, 8)])
 
   # caf
   obj$cafSubject        <- as.data.frame(datSubject_caf)
-  names(obj$cafSubject) <- c("Subject", "Comp", "bin", "accPer")
+  names(obj$cafSubject) <- c("Subject", "Bin", "accPerComp", "accPerIncomp", "meanEffect")
   obj$caf               <- as.data.frame(datAgg_caf)
 
   # delta
   obj$deltaSubject        <- as.data.frame(datSubject_dec)
-  names(obj$deltaSubject) <- c("Subject", "bin", "meanComp", "meanIncomp", "meanBin", "meanEffect")
+  names(obj$deltaSubject) <- c("Subject", "Bin", "meanComp", "meanIncomp", "meanBin", "meanEffect")
   obj$delta               <- as.data.frame(datAgg_dec)
+
+  obj$deltaErrorsSubject        <- as.data.frame(datSubject_dec_errors)
+  names(obj$deltaErrorsSubject) <- c("Subject", "Bin", "meanComp", "meanIncomp", "meanBin", "meanEffect")
+  obj$deltaErrors               <- as.data.frame(datAgg_dec_errors)
 
   class(obj) <- "dmcob"
 
@@ -446,19 +440,17 @@ dmcObservedData <- function(dat,
 #'
 #' @examples
 #' # Example 1
-#' datFlanker <- dmcObservedData(flankerDataRaw, nDelta = 9)
-#' datSimon <- dmcObservedData(simonDataRaw, nDelta = 9)
-#' dat <- dmcCombineObservedData(datFlanker, datSimon)  # combine flanker/simon data
-#' plot(dat, figType = "delta", xlimDelta = c(200, 700), 
-#'      cols = c("black", "darkgrey"), pchs = c(1, 2), resetPar = FALSE)  
-#' legend(200, 0, legend = c("Flanker Task", "Simon Task"), 
+#' dat <- dmcCombineObservedData(flankerData, simonData)  # combine flanker/simon data
+#' plot(dat, figType = "delta", xlimDelta = c(200, 700), ylimDelta = c(-20, 80),
+#'      cols = c("black", "darkgrey"), pchs = c(1, 2), legend = FALSE, resetPar = FALSE)
+#' legend(200, 80, legend = c("Flanker Task", "Simon Task"),
 #'        col = c("black", "darkgrey"), lty = c(1, 1))
 #'
 #' @export
 dmcCombineObservedData <- function(...) {
-  dat <- list(...) 
+  dat <- list(...)
   class(dat) <- "dmcobs"
-  return (dat)
+  return(dat)
 }
 
 
@@ -472,29 +464,29 @@ dmcCombineObservedData <- function(...) {
 #'
 #' @param dat DataFrame with columns containing the participant number, condition
 #' compatibility, RT data (in ms) and an Error column.
-#' @param nCAF Number of CAF bins. 
+#' @param nCAF Number of CAF bins.
 #' @param columns Name of required columns Default: c("Subject", "Comp", "RT", "Error")
 #' @param compCoding Coding for compatibility Default: c("comp", "incomp")
 #' @param errorCoding Coding for errors Default: c(0, 1))
 #'
-#' @return DataFrame 
+#' @return DataFrame
 #'
 #' @examples
 #' # Example 1
-#' dat <- createDF(nSubjects = 1, nTrl = 100, design = list("Comp" = c("comp", "incomp")))
+#' dat <- createDF(nSubjects = 1, nTrl = 10000, design = list("Comp" = c("comp", "incomp")))
 #' dat <- addDataDF(dat,
 #'                  RT = list("Comp_comp"   = c(500, 80, 100),
 #'                            "Comp_incomp" = c(600, 80, 140)),
-#'                  Error = list("Comp_comp"   = c(5, 4,3,2,1),
+#'                  Error = list("Comp_comp"   = c( 5, 4, 3, 2, 1),
 #'                               "Comp_incomp" = c(20, 8, 6, 4, 2)))
 #' caf <- calculateCAF(dat)
 #'
 #' # Example 2
-#' dat <- createDF(nSubjects = 1, nTrl = 100, design = list("Congruency" = c("cong", "incong")))
+#' dat <- createDF(nSubjects = 1, nTrl = 10000, design = list("Congruency" = c("cong", "incong")))
 #' dat <- addDataDF(dat,
 #'                  RT = list("Congruency_cong"   = c(500, 80, 100),
 #'                            "Congruency_incong" = c(600, 80, 140)),
-#'                  Error = list("Congruency_cong"   = c(5, 4,3,2,1),
+#'                  Error = list("Congruency_cong"   = c( 5, 4, 3, 2, 1),
 #'                               "Congruency_incong" = c(20, 8, 6, 4, 2)))
 #' head(dat)
 #' caf <- calculateCAF(dat, columns = c("Subject", "Congruency", "RT", "Error"),
@@ -516,7 +508,7 @@ calculateCAF <- function(dat,
 
   # create default column names
   if (any(names(dat) != c("Subject", "Comp", "RT", "Error"))) {
-    names(dat) = c("Subject", "Comp", "RT", "Error")
+    names(dat) <- c("Subject", "Comp", "RT", "Error")
   }
 
   # create default column values for comp and error coding
@@ -530,19 +522,19 @@ calculateCAF <- function(dat,
   # conditional accuracy functions (CAF)
   dat_caf <- dat %>%
     dplyr::group_by(Subject, Comp) %>%
-    dplyr::mutate(bin = ntile(RT, nCAF)) %>%
-    dplyr::group_by(Subject, Comp, bin) %>%
-    dplyr::summarize(N       = n(),
-                     accPer  = sum(Error == 0)/N,
-                     .groups = 'drop')  %>%
-    dplyr::group_by(Subject, Comp, bin) %>%
+    dplyr::mutate(Bin = ntile(RT, nCAF)) %>%
+    dplyr::group_by(Subject, Comp, Bin) %>%
+    dplyr::summarize(accPer  = sum(Error == 0) / n(),
+                     .groups = "drop")  %>%
+    dplyr::group_by(Subject, Comp, Bin) %>%
     dplyr::summarize(accPer  = mean(accPer),
-                     .groups = 'drop')
+                     .groups = "drop") %>%
+    tidyr::pivot_wider(., id_cols = c("Subject", "Bin"), names_from = "Comp", values_from = "accPer") %>%
+    dplyr::mutate(effect = ((100 - incomp) - (100 - comp)) * 100)
 
-    return(dat_caf)
+  return(dat_caf)
 
 }
-
 
 
 #' @title calculateDelta: Calculate delta function
@@ -553,34 +545,36 @@ calculateCAF <- function(dat,
 #'
 #' @param dat DataFrame with columns containing the participant number, condition
 #' compatibility, and RT data (in ms).
-#' @param nDelta Number of delta bins. 
+#' @param nDelta The number of delta bins.
+#' @param tDelta type of delta calculation (1=direct percentiles points, 2=percentile bounds (tile) averaging)
 #' @param columns Name of required columns Default: c("Subject", "Comp", "RT")
 #' @param compCoding Coding for compatibility Default: c("comp", "incomp")
 #' @param quantileType Argument (1-9) from R function quantile specifying the algorithm (?quantile)
 #'
-#' @return DataFrame 
+#' @return DataFrame
 #'
 #' @examples
 #' # Example 1
-#' dat <- createDF(nSubjects = 50, nTrl = 100, design = list("Comp" = c("comp", "incomp")))
+#' dat <- createDF(nSubjects = 1, nTrl = 10000, design = list("Comp" = c("comp", "incomp")))
 #' dat <- addDataDF(dat,
 #'                  RT = list("Comp_comp"   = c(500, 80, 100),
 #'                            "Comp_incomp" = c(600, 80, 140)))
 #' delta <- calculateDelta(dat)
 #'
 #' # Example 2
-#' dat <- createDF(nSubject = 50, nTrl = 100, design = list("Congruency" = c("cong", "incong")))
+#' dat <- createDF(nSubject = 1, nTrl = 10000, design = list("Congruency" = c("cong", "incong")))
 #' dat <- addDataDF(dat,
 #'                  RT = list("Congruency_cong"   = c(500, 80, 100),
 #'                            "Congruency_incong" = c(600, 80, 140)))
 #' head(dat)
-#' delta <- calculateDelta(dat, columns = c("Subject", "Congruency", "RT"),
+#' delta <- calculateDelta(dat, nDelta = 9, columns = c("Subject", "Congruency", "RT"),
 #'                         compCoding = c("cong", "incong"))
 #'
 #'
 #' @export
 calculateDelta <- function(dat,
                            nDelta = 19,
+                           tDelta = 1,
                            columns = c("Subject", "Comp", "RT"),
                            compCoding = c("comp", "incomp"),
                            quantileType = 5) {
@@ -593,28 +587,42 @@ calculateDelta <- function(dat,
 
   # create default column names
   if (any(names(dat) != c("Subject", "Comp", "RT"))) {
-    names(dat) = c("Subject", "Comp", "RT")
+    names(dat) <- c("Subject", "Comp", "RT")
   }
 
   # create default column values for comp and error coding
   if (any(compCoding != c("comp", "incomp"))) {
     dat$Comp <- ifelse(dat$Comp == compCoding[1], "comp", "incomp")
   }
- 
-  deltaSeq <- seq(0, 100, length.out = nDelta + 2) 
-  deltaSeq <- deltaSeq[2:(length(deltaSeq)-1)]
 
-  dat_delta <- dat %>%
-    dplyr::group_by(Subject, Comp) %>%
-    dplyr::summarize(bin     = deltaSeq,
-                     rt      = quantile(RT, deltaSeq/100, type = quantileType),
-                     .groups = 'drop')  %>%
-    tidyr::pivot_wider(., id_cols = c("Subject", "bin"), names_from = "Comp", values_from = "rt") %>%
-    dplyr::mutate(meanComp   = comp,
-                  meanIncomp = incomp,
-                  meanBin    = (comp + incomp)/2,
-                  meanEffect = (incomp - comp)) %>%
-    dplyr::select(-dplyr::one_of("comp", "incomp"))
+
+  if (tDelta == 1) {
+
+    deltaSeq <- seq(0, 100, length.out = nDelta + 2)
+    deltaSeq <- deltaSeq[2:(length(deltaSeq) - 1)]
+
+    dat_delta <- dat %>%
+      dplyr::group_by(Subject, Comp) %>%
+      dplyr::summarize(Bin    = seq(1, length(deltaSeq)),
+                       rt      = quantile(RT, deltaSeq / 100, type = quantileType),
+                       .groups = "drop")  %>%
+      tidyr::pivot_wider(., id_cols = c("Subject", "Bin"), names_from = "Comp", values_from = "rt") %>%
+      dplyr::mutate(meanBin = (comp + incomp) / 2,
+                    Effect  = (incomp - comp))
+
+  } else if (tDelta == 2) {
+
+    dat_delta <- dat %>%
+      dplyr::group_by(Subject, Comp) %>%
+      dplyr::mutate(Bin = ntile(RT, nDelta + 1)) %>%
+      dplyr::group_by(Subject, Comp, Bin) %>%
+      dplyr::summarize(rt = mean(RT),
+                       .groups = "drop")  %>%
+      tidyr::pivot_wider(., id_cols = c("Subject", "Bin"), names_from = "Comp", values_from = "rt") %>%
+      dplyr::mutate(meanBin = (comp + incomp) / 2,
+                    Effect  = (incomp - comp))
+
+  }
 
   return(dat_delta)
 
@@ -638,16 +646,16 @@ calculateDelta <- function(dat,
 #' @examples
 #' # Example 1
 #' x <- rtDist()
-#' hist(x, 100)
+#' hist(x, 100, xlab = "RT [ms]")
 #'
 #' # Example 2
 #' x <- rtDist(n=20000, gaussMean=800, gaussSD=50, expRate=100)
-#' hist(x, 100)
+#' hist(x, 100, xlab = "RT [ms]")
 #'
 #' @export
 rtDist <- function(n=10000, gaussMean=600, gaussSD=50, expRate=200) {
 
-  expDist <- stats::rexp(n, 1/expRate)
+  expDist <- stats::rexp(n, 1 / expRate)
   gaussDist <- stats::rnorm(n, gaussMean, gaussSD)
   return(round(expDist + gaussDist - mean(expDist)))
 
@@ -658,10 +666,8 @@ rtDist <- function(n=10000, gaussMean=600, gaussSD=50, expRate=200) {
 #'
 #' @description Returns a random vector of 0's (correct) and 1's (incorrect) with
 #' defined proportions (default = 10\% errors).
-#'
 #' @param n Number
 #' @param proportion Approximate proportion of errors in percentage
-#'
 #' @return double
 #'
 #' @examples
@@ -671,6 +677,6 @@ rtDist <- function(n=10000, gaussMean=600, gaussSD=50, expRate=200) {
 #'
 #' @export
 errDist <- function(n=10000, proportion = 10) {
-  return(ifelse(runif(n) <= proportion/100, 1, 0))
+  return(ifelse(runif(n) <= proportion / 100, 1, 0))
 }
 
