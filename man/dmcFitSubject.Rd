@@ -2,7 +2,7 @@
 % Please edit documentation in R/dmcFit.R
 \name{dmcFitSubject}
 \alias{dmcFitSubject}
-\title{dmcFitSubject: Fit DMC to individual participant data using optim (Nelder-Mead)}
+\title{dmcFitSubject}
 \usage{
 dmcFitSubject(
   resOb,
@@ -27,7 +27,8 @@ dmcFitSubject(
   subjects = c(),
   printInputArgs = TRUE,
   printResults = FALSE,
-  optimControl = list()
+  optimControl = list(),
+  numCores = 2
 )
 }
 \arguments{
@@ -89,9 +90,11 @@ squared percentage error ("SPE"), or likelihood-ratio chi-square statistic ("GS"
 \item{printResults}{TRUE/FALSE (default)}
 
 \item{optimControl}{Additional control parameters passed to optim (see optim details section)}
+
+\item{numCores}{Number of cores to use}
 }
 \value{
-dmcfit_subject List of dmcfit per subject fitted (see dmcFit)
+dmcFitSubject returns a list of objects of class "dmcfit"
 }
 \description{
 Fit theoretical data generated from dmcSim to observed data by
@@ -101,8 +104,9 @@ include squared percentage error ("SPE"), and g-squared statistic ("GS").
 }
 \examples{
 \donttest{
+# Code below can exceed CRAN check time limit, hence donttest
 # Example 1: Flanker data from Ulrich et al. (2015)
-fit <- dmcFitSubject(flankerData, nTrl = 1000, subjects = c(1, 2))
+fit <- dmcFitSubject(flankerData, nTrl = 1000, subjects = c(1, 2));
 plot(fit, flankerData, subject = 1)
 plot(fit, flankerData, subject = 2)
 summary(fit)

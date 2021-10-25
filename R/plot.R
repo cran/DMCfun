@@ -35,7 +35,7 @@
 #' @param resetPar TRUE/FALSE Reset graphical parameters
 #' @param ... additional plot pars
 #'
-#' @return NULL
+#' @return Plot (no return value)
 #'
 #' @examples
 #' \donttest{
@@ -352,7 +352,7 @@ plot.dmcsim <- function(x,
 #' @param xlim xlimit for delta plot
 #' @param figType delta (default), deltaErrors
 #' @param xlab x-label
-#' @param col # color range start/end color
+#' @param col color range start/end color
 #' @param lineType line type ("l", "b", "o") for delta plot
 #' @param legend TRUE/FALSE Show legend
 #' @param legendPos legend position
@@ -360,7 +360,7 @@ plot.dmcsim <- function(x,
 #' @param ncol number of legend columns
 #' @param ... pars for legend
 #'
-#' @return NULL
+#' @return Plot (no return value)
 #'
 #' @examples
 #' \donttest{
@@ -471,7 +471,7 @@ plot.dmclist <- function(x,
 #' @param resetPar TRUE/FALSE Reset graphical parameters
 #' @param ... additional plot pars
 #'
-#' @return NULL
+#' @return Plot (no return value)
 #'
 #' @examples
 #' \donttest{
@@ -722,7 +722,7 @@ plot.dmcob <- function(x,
 #' @param resetPar TRUE/FALSE Reset graphical parameters
 #' @param ... additional plot pars
 #'
-#' @return NULL
+#' @return Plot (no return value)
 #'
 #' @examples
 #' \donttest{
@@ -732,7 +732,6 @@ plot.dmcob <- function(x,
 #'      cols = c("black", "darkgrey"), pchs = c(1, 2), legend = FALSE, resetPar = FALSE)
 #' legend(200, 80, legend = c("Flanker Task", "Simon Task"),
 #'        col = c("black", "darkgrey"), lty = c(1, 1))
-#'
 #' }
 #' @export
 plot.dmcobs <- function(x,
@@ -764,6 +763,13 @@ plot.dmcobs <- function(x,
   if (resetPar) {
     opar <- par(no.readonly = TRUE)
     on.exit(par(opar))
+  }
+
+  # cycle
+  if (length(x) > 2) {
+    cols <- rep(cols, ceiling(length(x)/length(cols)))
+    ltys <- rep(ltys, ceiling(length(x)/length(ltys)))
+    pchs <- rep(ltys, ceiling(length(x)/length(pchs)))
   }
 
   figType <- tolower(figType)
@@ -847,7 +853,7 @@ plot.dmcobs <- function(x,
         addErrorBars(c(1, 2), x[[i]]$summary$rtCor, x[[i]]$summary[[paste0(errorBarType, "RtCor")]])
       }
     }
-    add_legend(legend, legendLabels, tail(cols, 2), ltys, pchs)
+    add_legend(legend, legendLabels, cols, ltys, pchs)
 
   }
 
@@ -867,7 +873,7 @@ plot.dmcobs <- function(x,
         addErrorBars(c(1, 2), x[[i]]$summary$perErr, x[[i]]$summary[[paste0(errorBarType, "PerErr")]])
       }
     }
-    add_legend(legend, legendLabels, tail(cols, 2), ltys, pchs)
+    add_legend(legend, legendLabels, cols, ltys, pchs)
 
   }
 
@@ -887,7 +893,7 @@ plot.dmcobs <- function(x,
         addErrorBars(c(1, 2), x[[i]]$summary$rtErr, x[[i]]$summary[[paste0(errorBarType, "RtErr")]])
       }
     }
-    add_legend(legend, legendLabels, tail(cols, 2), ltys, pchs)
+    add_legend(legend, legendLabels, cols, ltys, pchs)
 
   }
 
@@ -922,7 +928,7 @@ plot.dmcobs <- function(x,
       lines(x[[i]]$delta$meanIncomp, ypoints, type = "o", col = tail(cols, 2)[2], ...)
     }
 
-    add_legend(legend, legendLabels, tail(cols, 2), c(1, 1), c(1, 1))
+    add_legend(legend, legendLabels, cols, ltys, pchs)
 
   }
 
@@ -933,7 +939,7 @@ plot.dmcobs <- function(x,
       ylimCAF <- c(0, 1)
     }
 
-    nCAF <- length(x[[1]]$caf$Bin) / 2
+    nCAF <- length(x[[1]]$caf$Bin)
     plot(NULL, NULL,
          ylim = ylimCAF,
          ylab = ylabs[5], xlab = xlabs[5], xlim = c(0.5, nCAF + 0.5),
@@ -959,13 +965,11 @@ plot.dmcobs <- function(x,
     }
 
     for (i in seq_along(x)) {
-      lines(x[[i]]$caf$accPer[x[[i]]$caf$Comp == "comp"],
-        type = "o", col = tail(cols, 2)[1], lty = ltys[i], pch = pchs[i], ...)
-      lines(x[[i]]$caf$accPer[x[[i]]$caf$Comp == "incomp"],
-        type = "o", col = tail(cols, 2)[2], lty = ltys[i], pch = pchs[i], ...)
+      lines(x[[i]]$caf$accPerComp,   type = "o", col = tail(cols, 2)[1], lty = ltys[i], pch = pchs[i], ...)
+      lines(x[[i]]$caf$accPerIncomp, type = "o", col = tail(cols, 2)[2], lty = ltys[i], pch = pchs[i], ...)
     }
 
-    add_legend(legend, legendLabels, tail(cols, 2), c(1, 1), c(1, 1))
+    add_legend(legend, legendLabels, cols, ltys, pchs)
 
   }
 
@@ -1002,7 +1006,7 @@ plot.dmcobs <- function(x,
       }
     }
 
-    add_legend(legend, legendLabels, tail(cols, 2), c(1, 1), c(1, 1))
+    add_legend(legend, legendLabels, cols, ltys, pchs)
 
   }
 
@@ -1041,7 +1045,7 @@ plot.dmcobs <- function(x,
 #' @param resetPar TRUE/FALSE Reset graphical parameters
 #' @param ... additional plot pars
 #'
-#' @return NULL
+#' @return Plot (no return value)
 #'
 #' @examples
 #' \donttest{
@@ -1088,8 +1092,7 @@ plot.dmcfit <- function(x,
   }
 
   figType <- tolower(figType)
-  figTypes <- c("summary", "all", "rtcorrect", "errorrate",
-                "rterrors", "cdf", "caf", "delta")
+  figTypes <- c("summary", "all", "rtcorrect", "errorrate", "rterrors", "cdf", "caf", "delta")
   if (length(figType) > 1 || !figType %in% figTypes) {
     stop("figType must be one of:", paste0(figTypes, collapse = ", "))
   }
@@ -1244,7 +1247,7 @@ plot.dmcfit <- function(x,
 #' @param errorSize +- size of error bars
 #' @param arrowSize Width of the errorbar arrow
 #'
-#' @return Plot
+#' @return Plot (no return value)
 #'
 #' @examples
 #' # Example 1

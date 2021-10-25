@@ -30,7 +30,7 @@
 
 \item{xlab}{x-label}
 
-\item{col}{# color range start/end color}
+\item{col}{color range start/end color}
 
 \item{lineType}{line type ("l", "b", "o") for delta plot}
 
@@ -43,6 +43,9 @@
 \item{ncol}{number of legend columns}
 
 \item{...}{pars for legend}
+}
+\value{
+Plot (no return value)
 }
 \description{
 Plot delta function from multiple dmc simulations (i.e., dmcSims).

@@ -2,7 +2,7 @@
 % Please edit documentation in R/dmcFit.R
 \name{dmcFitSubjectDE}
 \alias{dmcFitSubjectDE}
-\title{dmcFitSubjectDE: Fit DMC to individual participant data using R-package DEoptim.}
+\title{dmcFitSubjectDE}
 \usage{
 dmcFitSubjectDE(
   resOb,
@@ -21,7 +21,8 @@ dmcFitSubjectDE(
   drLim = c(0.1, 0.7),
   rtMax = 5000,
   subjects = c(),
-  deControl = list()
+  deControl = list(),
+  numCores = 2
 )
 }
 \arguments{
@@ -65,9 +66,11 @@ squared percentage error ("SPE"), or likelihood-ratio chi-square statistic ("GS"
 \item{subjects}{NULL (aggregated data across all subjects) or integer for subject number}
 
 \item{deControl}{Additional control parameters passed to DEoptim (see DEoptim.control)}
+
+\item{numCores}{Number of cores to use}
 }
 \value{
-dmcfit_subject List of dmcfit per subject fitted (see dmcFitDM)
+dmcFitSubjectDE returns a list of objects of class "dmcfit"
 }
 \description{
 Fit theoretical data generated from dmcSim to observed data by
@@ -77,6 +80,7 @@ include squared percentage error ("SPE"), and g-squared statistic ("GS").
 }
 \examples{
 \donttest{
+# Code below can exceed CRAN check time limit, hence donttest
 # Example 1: Flanker data from Ulrich et al. (2015)
 fit <- dmcFitSubjectDE(flankerData, nTrl = 1000, subjects = c(1, 2))
 plot(fit, flankerData, subject = 1)

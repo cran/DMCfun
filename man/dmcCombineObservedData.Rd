@@ -2,7 +2,7 @@
 % Please edit documentation in R/dmcData.R
 \name{dmcCombineObservedData}
 \alias{dmcCombineObservedData}
-\title{dmcCombineObservedData: Combine results from dmcObservedData}
+\title{dmcCombineObservedData}
 \usage{
 dmcCombineObservedData(...)
 }
@@ -10,7 +10,7 @@ dmcCombineObservedData(...)
 \item{...}{Any number of outputs from dmcObservedData}
 }
 \value{
-dmcobs
+dmcCombineObservedData returns a list of objects of class "dmcob"
 }
 \description{
 Combine observed datasets
@@ -19,7 +19,7 @@ Combine observed datasets
 # Example 1
 dat <- dmcCombineObservedData(flankerData, simonData)  # combine flanker/simon data
 plot(dat, figType = "delta", xlimDelta = c(200, 700), ylimDelta = c(-20, 80),
-     cols = c("black", "darkgrey"), pchs = c(1, 2), legend = FALSE, resetPar = FALSE)
+     cols = c("black", "darkgrey"), legend = FALSE, resetPar = FALSE)
 legend(200, 80, legend = c("Flanker Task", "Simon Task"),
        col = c("black", "darkgrey"), lty = c(1, 1))
 

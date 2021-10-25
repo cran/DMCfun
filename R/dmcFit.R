@@ -1,4 +1,4 @@
-#' @title dmcFit: Fit DMC to aggregated data using optim (Nelder-Mead)
+#' @title dmcFit
 #'
 #' @description Fit theoretical data generated from dmcSim to observed data by
 #' minimizing the root-mean-square error ("RMSE") between a weighted combination
@@ -40,20 +40,20 @@
 #' @param printInputArgs TRUE (default) /FALSE
 #' @param printResults TRUE/FALSE (default)
 #' @param optimControl Additional control parameters passed to optim (see optim details section)
+#' @param numCores Number of cores to use
 #'
-#' @return dmcfit
+#' @return dmcfit returns an object of class "dmcfit" with the following components:
 #'
-#' The function returns a list with the relevant results from the fitting procedure. The list
-#' is accessed with obj$name with the the following:
-#' \item{obj$means}{Condition means for reaction time and error rate}
-#' \item{obj$caf}{Accuracy per bin for compatible and incompatible trials}
-#' \item{obj$delta}{Mean RT and compatibility effect per bin}
-#' \item{obj$sim}{Individual trial data points (RTs for all trial types e.g., correct/error trials) and activation
-#' vectors from the simulation}
-#' \item{obj$par}{The fitted model parameters + final cost value of the fit}
+#' \item{sim}{Individual trial data points (RTs for all trial types e.g., correct/error trials) and activation vectors from the simulation}
+#' \item{summary}{Condition means for reaction time and error rate}
+#' \item{caf}{Conditional Accuracy Function (CAF) data per bin}
+#' \item{delta}{DataFrame with distributional delta analysis data correct trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
+#' \item{delta_errs}{DataFrame with distributional delta analysis data incorrect trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
+#' \item{par}{The fitted model parameters + final cost value of the fit}
 #'
 #' @examples
 #' \donttest{
+#' # Code below can exceed CRAN check time limit, hence donttest
 #' # Example 1: Flanker data from Ulrich et al. (2015)
 #' fit <- dmcFit(flankerData) # only initial search tau
 #' plot(fit, flankerData)
@@ -112,7 +112,8 @@ dmcFit <- function(resOb,
                    costFunction = "RMSE",
                    printInputArgs = TRUE,
                    printResults = FALSE,
-                   optimControl = list()) {
+                   optimControl = list(),
+                   numCores = 2) {
 
   # default parameter space
   defaultStartVals <- list(amp = 20, tau = 200, drc = 0.5, bnds = 75, resMean = 300, resSD = 30, aaShape = 2, spShape = 3, spBias = 0, sigm = 4)
@@ -173,13 +174,15 @@ dmcFit <- function(resOb,
     startValsGrid <- dplyr::distinct(expand.grid(Map(unique, startValsGrid)))
     message("Searching initial parameter gridspace: N = ", nrow(startValsGrid), ", with ", nTrl, " trials per simulation.")
 
+    # CRAN maintainer personal communication: THIS IS NOT THE WAY TO DO IT!
+    # CRAN submissions can only use maximum of two cores unless user requests more!
     # R check limits number of cores to 2 (https://stackoverflow.com/questions/50571325/r-cran-check-fail-when-using-parallel-functions)
-    chk <- tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
-    if (nzchar(chk) && (chk == "true")) {
-      num_cores <- 2L
-    } else {
-      num_cores <- parallel::detectCores() / 2
-    }
+    # chk <- tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
+    # if (nzchar(chk) && (chk == "true")) {
+    #   num_cores <- 2L
+    # } else {
+    #   num_cores <- parallel::detectCores() / 2
+    # }
 
     # Older code (pre June 2020) used doSNOW progress bar
     # R CMD check --as-cran -->  doSNOW warning “superseded packages”
@@ -199,7 +202,7 @@ dmcFit <- function(resOb,
       return(calculateCostValue(resTh, resOb))
     }
 
-    cl <- parallel::makeCluster(num_cores)
+    cl <- parallel::makeCluster(numCores)
     invisible(parallel::clusterExport(cl = cl, varlist = c("dmcSim", "calculateCostValue"), envir = environment()))
 
     # calculate initial cost values across grid starting values and find min
@@ -259,7 +262,7 @@ dmcFit <- function(resOb,
 }
 
 
-#' @title dmcFitDE: Fit DMC to aggregated data using R-package DEoptim (Differential Evolution)
+#' @title dmcFitDE
 #'
 #' @description Fit theoretical data generated from dmcSim to observed data by
 #' minimizing the root-mean-square error (RMSE) between a weighted combination
@@ -289,19 +292,26 @@ dmcFit <- function(resOb,
 #' @param drShape The drift rate (dr) shape parameter
 #' @param drLim The drift rate (dr) range
 #' @param deControl Additional control parameters passed to DEoptim (see DEoptim.control)
+#' @param numCores Number of cores to use
 #'
-#' @return dmcfit
+#' @return dmcfit returns an object of class "dmcfit" with the following components:
 #'
-#' \item{obj$means}{Condition means for reaction time and error rate}
-#' \item{obj$caf}{Accuracy per bin for compatible and incompatible trials}
-#' \item{obj$delta}{Mean RT and compatibility effect per bin}
-#' \item{obj$sim}{Individual trial data points (RTs for all trial types e.g., correct/error trials) and activation}
-#' \item{obj$par}{The fitted model parameters + final cost value of the fit}
+#' \item{sim}{Individual trial data points (RTs for all trial types e.g., correct/error trials) and activation vectors from the simulation}
+#' \item{summary}{Condition means for reaction time and error rate}
+#' \item{caf}{Conditional Accuracy Function (CAF) data per bin}
+#' \item{delta}{DataFrame with distributional delta analysis data correct trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
+#' \item{delta_errs}{DataFrame with distributional delta analysis data incorrect trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
+#' \item{par}{The fitted model parameters + final cost value of the fit}
 #'
 #' @examples
 #' \donttest{
+#' # The code below can exceed CRAN check time limit, hence donttest
+#' # NB. The following code when using numCores = 2 (default) takes approx 20 minutes on
+#' # a standard desktop, whilst when increasing the number of cores used, (numCores = 12),
+#' # the code takes approx 5 minutes.
+#'
 #' # Example 1: Flanker data from Ulrich et al. (2015)
-#' fit <- dmcFitDE(flankerData)
+#' fit <- dmcFitDE(flankerData);
 #' plot(fit, flankerData)
 #' summary(fit)
 #'
@@ -326,7 +336,8 @@ dmcFitDE <- function(resOb,
                      drShape = 3,
                      drLim = c(0.1, 0.7),
                      rtMax = 5000,
-                     deControl = list()) {
+                     deControl = list(),
+                     numCores = 2) {
 
   # default parameter space
   defaultMinVals <- list(amp = 10, tau = 5, drc = 0.1, bnds = 20, resMean = 200, resSD = 5, aaShape = 1, spShape = 2, spBias = 0, sigm = 4)
@@ -357,14 +368,17 @@ dmcFitDE <- function(resOb,
     }
   }
 
+  # CRAN maintainer personal communication: THIS IS NOT THE WAY TO DO IT!
+  # CRAN submissions can only use maximum of two cores unless user requests more!
   # R check limits number of cores to 2 (https://stackoverflow.com/questions/50571325/r-cran-check-fail-when-using-parallel-functions)
-  chk <- tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
-  if (nzchar(chk) && (chk == "true")) {
-    num_cores <- 2L
-  } else {
-    num_cores <- parallel::detectCores() / 2
-  }
-  cl <- parallel::makeCluster(num_cores)
+  # chk <- tolower(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))
+  # if (nzchar(chk) && (chk == "true")) {
+  #   num_cores <- 2L
+  # } else {
+  #   num_cores <- parallel::detectCores() / 2
+  # }
+
+  cl <- parallel::makeCluster(numCores)
   invisible(parallel::clusterExport(cl = cl, varlist = c("dmcSim", "calculateCostValue"), envir = environment()))
 
   defaultControl <- list(VTR = 0, strategy = 1, NP = 100, itermax = 200, trace = 1, cluster = cl)
@@ -440,7 +454,7 @@ dmcFitDE <- function(resOb,
 }
 
 
-#' @title dmcFitSubject: Fit DMC to individual participant data using optim (Nelder-Mead)
+#' @title dmcFitSubject
 #'
 #' @description Fit theoretical data generated from dmcSim to observed data by
 #' minimizing the root-mean-square error ("RMSE") between a weighted combination
@@ -483,13 +497,15 @@ dmcFitDE <- function(resOb,
 #' @param printInputArgs TRUE (default) /FALSE
 #' @param printResults TRUE/FALSE (default)
 #' @param optimControl Additional control parameters passed to optim (see optim details section)
+#' @param numCores Number of cores to use
 #'
-#' @return dmcfit_subject List of dmcfit per subject fitted (see dmcFit)
+#' @return dmcFitSubject returns a list of objects of class "dmcfit"
 #'
 #' @examples
 #' \donttest{
+#' # Code below can exceed CRAN check time limit, hence donttest
 #' # Example 1: Flanker data from Ulrich et al. (2015)
-#' fit <- dmcFitSubject(flankerData, nTrl = 1000, subjects = c(1, 2))
+#' fit <- dmcFitSubject(flankerData, nTrl = 1000, subjects = c(1, 2));
 #' plot(fit, flankerData, subject = 1)
 #' plot(fit, flankerData, subject = 2)
 #' summary(fit)
@@ -524,7 +540,9 @@ dmcFitSubject <- function(resOb,
                           subjects = c(),
                           printInputArgs = TRUE,
                           printResults = FALSE,
-                          optimControl = list()) {
+                          optimControl = list(),
+                          numCores = 2) {
+
   if (length(subjects) == 0) {
     subjects <- unique(resOb$summarySubject$Subject) # fit all individual subjects in data
   }
@@ -575,9 +593,7 @@ dmcFitSubject <- function(resOb,
 }
 
 
-#' @title dmcFitSubjectDE: Fit DMC to individual participant data using R-package DEoptim.
-#'
-#' @title dmcFitDE: Fit DMC to aggregated data using R-package DEoptim (Differential Evolution)
+#' @title dmcFitSubjectDE
 #'
 #' @description Fit theoretical data generated from dmcSim to observed data by
 #' minimizing the root-mean-square error (RMSE) between a weighted combination
@@ -608,11 +624,13 @@ dmcFitSubject <- function(resOb,
 #' @param drLim The drift rate (dr) range
 #' @param subjects NULL (aggregated data across all subjects) or integer for subject number
 #' @param deControl Additional control parameters passed to DEoptim (see DEoptim.control)
+#' @param numCores Number of cores to use
 #'
-#' @return dmcfit_subject List of dmcfit per subject fitted (see dmcFitDM)
+#' @return dmcFitSubjectDE returns a list of objects of class "dmcfit"
 #'
 #' @examples
 #' \donttest{
+#' # Code below can exceed CRAN check time limit, hence donttest
 #' # Example 1: Flanker data from Ulrich et al. (2015)
 #' fit <- dmcFitSubjectDE(flankerData, nTrl = 1000, subjects = c(1, 2))
 #' plot(fit, flankerData, subject = 1)
@@ -643,7 +661,9 @@ dmcFitSubjectDE <- function(resOb,
                             drLim = c(0.1, 0.7),
                             rtMax = 5000,
                             subjects = c(),
-                            deControl = list()) {
+                            deControl = list(),
+                            numCores = 2) {
+
   if (length(subjects) == 0) {
     subjects <- unique(resOb$summarySubject$Subject) # fit all individual subjects in data
   }
@@ -685,28 +705,24 @@ dmcFitSubjectDE <- function(resOb,
 }
 
 
-#' @title mean.dmcfit: Return mean simulation results from dmcFitSubject
+#' @title mean.dmcfit
 #'
 #' @description Aggregate simulation results from dmcFitSubject/dmcFitSubjectDE.
 #'
 #' @param x Output from dmcFitSubject/dmcFitSubjectDE
 #' @param ... pars
 #'
-#' @return dmcfit
-#'
-#' The function returns a list with the relevant aggregated results from dmcFitSubject/dmcFitSubjectDE. The list
-#' is accessed with obj$name and so on with the the following:
-#' \item{obj$means}{means}
-#' \item{obj$delta}{delta}
-#' \item{obj$caf}{caf}
-#' \item{obj$prms}{par}
+#' @return mean.dmcfit return an object of class "dmcfit" with the following components:
+#' \item{summary}{DataFrame within aggregated subject data (rtCor, sdRtCor, seRtCor, perErr, sdPerErr, sePerErr, rtErr, sdRtErr, seRtErr) for compatibility condition}
+#' \item{delta}{DataFrame within aggregated subject distributional delta analysis data correct trials (Bin, meanComp, meanIncomp, meanBin, meanEffect, sdEffect, seEffect)}
+#' \item{caf}{DataFrame within aggregated subject conditional accuracy function (CAF) data (Bin, accPerComp, accPerIncomp, meanEffect, sdEffect, seEffect)}
+#' \item{par}{The fitted model parameters + final cost value of the fit}
 #'
 #' @examples
 #' \donttest{
+#' # Code below can exceed CRAN check time limit, hence donttest
 #' # Example 1: Fit individual data then aggregate
 #' fitSubjects <- dmcFitSubject(flankerData, nTrl = 1000, subjects = c(1, 2))
-#' plot(fitSubjects, flankerData, subject = 1)
-#' summary(fitSubjects)
 #' fitAgg <- mean(fitSubjects)
 #' plot(fitAgg, flankerData)
 #' }
@@ -784,9 +800,9 @@ minimizeCostValue <- function(x,
   return(cost)
 }
 
-#' @title calculateCostValueRMSE: Calculate RMSE from RT and error data
+#' @title calculateCostValueRMSE
 #'
-#' @description Calculate cost value (fit) from combination of RT and error rate.
+#' @description Calculate cost value (fit) using root-mean-square error (RMSE) from a combination of RT and error rate.
 #'
 #' @param resTh list containing caf values for comp/incomp conditions (nbins * 4 columns) and
 #' delta values for comp/incomp conditions (nbins * 5 columns). See output from dmcSim (.$caf).
@@ -820,9 +836,9 @@ calculateCostValueRMSE <- function(resTh, resOb) {
   return(costValue)
 }
 
-#' @title calculateCostValueSPE: Calculate squared percentage error (SPE) from RT and error data
+#' @title calculateCostValueSPE
 #'
-#' @description Calculate cost value (fit) from combination of RT and error rate.
+#' @description Calculate cost value (fit) using squared percentage errror (SPE) from combination of RT and error rate.
 #'
 #' @param resTh list containing caf values for comp/incomp conditions (nbins * 4 columns) and
 #' delta values for comp/incomp conditions (nbins * 5 columns). See output from dmcSim (.$caf).
@@ -855,14 +871,13 @@ calculateCostValueSPE <- function(resTh, resOb) {
 }
 
 
-#' @title calculateCostValueCS: Calculate chi-square (CS) statistic from reaction times for both correct and
-#' incorrect trials
+#' @title calculateCostValueCS
 #'
-#' @description Calculate cost value (fit) from correct and incorrect RT data.
+#' @description Calculate cost value (fit) using chi-square (CS) from correct and incorrect RT data.
 #'
 #' @param resTh list containing simulation $sim values (output from dmcSim) for rts_comp, rts_incomp,
 #' errs_comp, errs_incomp
-#' @param resOb list containing raw observed data (see dmcObservedData with keepRaw = TRUE
+#' @param resOb list containing raw observed data (see dmcObservedData with keepRaw = TRUE)
 #'
 #' @return cost value (CS)
 #'
@@ -895,14 +910,13 @@ cs <- function(th, ob) {
 
 
 
-#' @title calculateCostValueGS: Calculate likelihood-ratio chi-square statistic (GS) statistic from reaction times
-#' for both correct and incorrect trials
+#' @title calculateCostValueGS
 #'
-#' @description Calculate cost value (fit) from correct and incorrect RT data.
+#' @description Calculate cost value (fit) using likelihood-ratio chi-square statistic (GS) from correct and incorrect RT data.
 #'
 #' @param resTh list containing simulation $sim values (output from dmcSim) for rts_comp, rts_incomp,
 #' errs_comp, errs_incomp
-#' @param resOb list containing raw observed data (see dmcObservedData with keepRaw = TRUE
+#' @param resOb list containing raw observed data (see dmcObservedData with keepRaw = TRUE)
 #'
 #' @return cost value (GS)
 #'
@@ -911,7 +925,7 @@ cs <- function(th, ob) {
 #' resTh <- dmcSim()
 #' resOb <- flankerData
 #' resOb <- calculateBinProbabilities(resOb)
-#' cost <- calculateCostValueGS(resTh, resOb)
+#' cost  <- calculateCostValueGS(resTh, resOb)
 #' @export
 calculateCostValueGS <- function(resTh, resOb) {
   nComp <- nrow(resOb$data[resOb$data$Comp == "comp" & resOb$data$outlier == 0, ])
@@ -958,7 +972,7 @@ costValueFunction <- function(costFunction) {
   stop("costFunction must be one of 'rmse', 'spe', 'gs', 'cs', or custom function")
 }
 
-#' @title calculateBinProbabilities: Calculate bin probabilities in observed data
+#' @title calculateBinProbabilities
 #'
 #' @description Calculate bin probabilities in observed data
 #'

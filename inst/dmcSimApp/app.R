@@ -33,6 +33,7 @@ shiny::shinyApp(
     )
   ),
   server = function(input, output) {
+
     output$dmcSim <- shiny::renderPlot({
       fullData <- ifelse(input$plottype == 1, TRUE, FALSE)
       xlimDelta <- NULL
@@ -61,6 +62,9 @@ shiny::shinyApp(
         plot(dmc, figType = "summary3", cex = 1.5, mar = c(2,6,2,2), lwd = 3,
           ylimRt = ylimRt, ylimErr = ylimErr)
       } else if (input$plottype == 4) {
+
+        # keep original user par and reset later
+        opar <- par(no.readonly = TRUE)
 
         # histogram of RT distributions
         par(mfrow = (c(2, 1)))
@@ -104,6 +108,9 @@ shiny::shinyApp(
             border = FALSE, breaks = 100, main = "", ylab = "")
           abline(v = mean(incomp), col = "red", lwd = 2)
         }
+
+        # reset original par
+        par(opar)
 
       }
     })

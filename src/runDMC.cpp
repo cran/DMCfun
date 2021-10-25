@@ -26,7 +26,7 @@ void run_dmc_sim(Prms &p,
     // equation 4
     std::vector<double> eq4(p.tmax);
     for (unsigned int i = 0; i < p.tmax; i++)
-      eq4[i] = p.amp * exp(-(i+1.0) / p.tau) * pow((exp(1) * (i+1.0) / (p.aaShape - 1) / p.tau), p.aaShape - 1);
+      eq4[i] = p.amp * exp(-(i+1.0) / p.tau) * pow((exp(1.0) * (i+1.0) / (p.aaShape - 1) / p.tau), p.aaShape - 1);
     rsim["eq4"] = eq4;
 
     // run comp and incomp simulation
@@ -232,16 +232,16 @@ std::vector<double> calculate_summary(
 
 std::vector<double> calculate_percentile( std::vector<double> vDelta, std::vector<double> rts, int type ) {
 
-    int nDelta = vDelta.size() - 2;
+    unsigned int nDelta = vDelta.size() - 2;
     std::vector<double> res_p(nDelta, 0);
 
     double pct_idx;
     std::vector<int> pct_idx_int(nDelta);
     double pct_idx_dec;
 
-    if (rts.size() != 0) {
+    if (rts.size() >= nDelta) {
         std::sort(rts.begin(), rts.end());
-        for (int i = 0; i < nDelta; i++) {
+        for (unsigned int i = 0; i < nDelta; i++) {
           pct_idx = (vDelta[i+1] / 100.0) * (rts.size() - 1);
           pct_idx_int[i] = int(pct_idx);
           pct_idx_dec = pct_idx - static_cast<double>(pct_idx_int[i]);
@@ -303,4 +303,3 @@ std::vector<double> calculate_caf(std::vector<double> &rts, std::vector<double> 
     return res;
 
 }
-

@@ -2,7 +2,7 @@
 % Please edit documentation in R/dmcFit.R
 \name{dmcFit}
 \alias{dmcFit}
-\title{dmcFit: Fit DMC to aggregated data using optim (Nelder-Mead)}
+\title{dmcFit}
 \usage{
 dmcFit(
   resOb,
@@ -26,7 +26,8 @@ dmcFit(
   costFunction = "RMSE",
   printInputArgs = TRUE,
   printResults = FALSE,
-  optimControl = list()
+  optimControl = list(),
+  numCores = 2
 )
 }
 \arguments{
@@ -86,18 +87,18 @@ squared percentage error ("SPE"), or likelihood-ratio chi-square statistic ("GS"
 \item{printResults}{TRUE/FALSE (default)}
 
 \item{optimControl}{Additional control parameters passed to optim (see optim details section)}
+
+\item{numCores}{Number of cores to use}
 }
 \value{
-dmcfit
+dmcfit returns an object of class "dmcfit" with the following components:
 
-The function returns a list with the relevant results from the fitting procedure. The list
-is accessed with obj$name with the the following:
-\item{obj$means}{Condition means for reaction time and error rate}
-\item{obj$caf}{Accuracy per bin for compatible and incompatible trials}
-\item{obj$delta}{Mean RT and compatibility effect per bin}
-\item{obj$sim}{Individual trial data points (RTs for all trial types e.g., correct/error trials) and activation
-vectors from the simulation}
-\item{obj$par}{The fitted model parameters + final cost value of the fit}
+\item{sim}{Individual trial data points (RTs for all trial types e.g., correct/error trials) and activation vectors from the simulation}
+\item{summary}{Condition means for reaction time and error rate}
+\item{caf}{Conditional Accuracy Function (CAF) data per bin}
+\item{delta}{DataFrame with distributional delta analysis data correct trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
+\item{delta_errs}{DataFrame with distributional delta analysis data incorrect trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
+\item{par}{The fitted model parameters + final cost value of the fit}
 }
 \description{
 Fit theoretical data generated from dmcSim to observed data by
@@ -107,6 +108,7 @@ include squared percentage error ("SPE"), and g-squared statistic ("GS").
 }
 \examples{
 \donttest{
+# Code below can exceed CRAN check time limit, hence donttest
 # Example 1: Flanker data from Ulrich et al. (2015)
 fit <- dmcFit(flankerData) # only initial search tau
 plot(fit, flankerData)

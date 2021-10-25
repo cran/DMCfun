@@ -2,7 +2,7 @@
 % Please edit documentation in R/dmcFit.R
 \name{dmcFitDE}
 \alias{dmcFitDE}
-\title{dmcFitDE: Fit DMC to aggregated data using R-package DEoptim (Differential Evolution)}
+\title{dmcFitDE}
 \usage{
 dmcFitDE(
   resOb,
@@ -20,7 +20,8 @@ dmcFitDE(
   drShape = 3,
   drLim = c(0.1, 0.7),
   rtMax = 5000,
-  deControl = list()
+  deControl = list(),
+  numCores = 2
 )
 }
 \arguments{
@@ -62,15 +63,18 @@ squared percentage error ("SPE"), or likelihood-ratio chi-square statistic ("GS"
 \item{rtMax}{The limit on simulated RT (decision + non-decisional components)}
 
 \item{deControl}{Additional control parameters passed to DEoptim (see DEoptim.control)}
+
+\item{numCores}{Number of cores to use}
 }
 \value{
-dmcfit
+dmcfit returns an object of class "dmcfit" with the following components:
 
-\item{obj$means}{Condition means for reaction time and error rate}
-\item{obj$caf}{Accuracy per bin for compatible and incompatible trials}
-\item{obj$delta}{Mean RT and compatibility effect per bin}
-\item{obj$sim}{Individual trial data points (RTs for all trial types e.g., correct/error trials) and activation}
-\item{obj$par}{The fitted model parameters + final cost value of the fit}
+\item{sim}{Individual trial data points (RTs for all trial types e.g., correct/error trials) and activation vectors from the simulation}
+\item{summary}{Condition means for reaction time and error rate}
+\item{caf}{Conditional Accuracy Function (CAF) data per bin}
+\item{delta}{DataFrame with distributional delta analysis data correct trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
+\item{delta_errs}{DataFrame with distributional delta analysis data incorrect trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
+\item{par}{The fitted model parameters + final cost value of the fit}
 }
 \description{
 Fit theoretical data generated from dmcSim to observed data by
@@ -80,8 +84,13 @@ include squared percentage error ("SPE"), and g-squared statistic ("GS").
 }
 \examples{
 \donttest{
+# The code below can exceed CRAN check time limit, hence donttest
+# NB. The following code when using numCores = 2 (default) takes approx 20 minutes on
+# a standard desktop, whilst when increasing the number of cores used, (numCores = 12),
+# the code takes approx 5 minutes.
+
 # Example 1: Flanker data from Ulrich et al. (2015)
-fit <- dmcFitDE(flankerData)
+fit <- dmcFitDE(flankerData);
 plot(fit, flankerData)
 summary(fit)
 

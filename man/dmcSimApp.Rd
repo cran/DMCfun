@@ -2,9 +2,12 @@
 % Please edit documentation in R/dmcSim.R
 \name{dmcSimApp}
 \alias{dmcSimApp}
-\title{A shiny app allowing interactive exploration of DMC parameters}
+\title{dmcSimApp}
 \usage{
 dmcSimApp()
+}
+\value{
+Shiny App
 }
 \description{
 A shiny app allowing interactive exploration of DMC parameters
