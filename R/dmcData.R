@@ -70,6 +70,9 @@ createDF <- function(nSubjects = 20,
                      design = list("A" = c("A1", "A2"), "B" = c("B1", "B2"))) {
 
   dat <-  data.frame(expand.grid(modifyList(design, list(Subject = c(1:nSubjects), Trial = c(1:nTrl)))))
+  dat <- dat[order(dat$Subject), ]
+  row.names(dat) <- NULL
+
   return(dat[c("Subject", names(design))])
 
 }
@@ -224,13 +227,14 @@ addDataDF <- function(dat, RT=NULL, Error=NULL) {
 #' @param dat A text file(s) containing the observed data or an R DataFrame (see createDF/addDataDF)
 #' @param nCAF The number of CAF bins.
 #' @param nDelta The number of delta bins.
-#' @param pDelta An alternative option to nDelta by directly specifying required percentile values (vector of values 0-100)
+#' @param pDelta An alternative option to nDelta (tDelta = 1 only) by directly specifying required percentile values (vector of values 0-100)
 #' @param tDelta The type of delta calculation (1=direct percentiles points, 2=percentile bounds (tile) averaging)
 #' @param outlier Outlier limits in ms (e.g., c(200, 1200))
 #' @param columns Name of required columns DEFAULT = c("Subject", "Comp", "RT", "Error")
 #' @param compCoding Coding for compatibility DEFAULT = c("comp", "incomp")
 #' @param errorCoding Coding for errors DEFAULT = c(0, 1))
 #' @param quantileType Argument (1-9) from R function quantile specifying the algorithm (?quantile)
+#' @param deltaErrors TRUE/FALSE Calculate RT delta for error trials.
 #' @param keepRaw TRUE/FALSE
 #' @param delim Single character used to separate fields within a record if reading from external text file.
 #' @param skip The number of lines to skip before reading data if reading from external text file.
@@ -242,15 +246,15 @@ addDataDF <- function(dat, RT=NULL, Error=NULL) {
 #' \item{caf}{DataFrame within aggregated subject conditional accuracy function (CAF) data (Bin, accPerComp, accPerIncomp, meanEffect, sdEffect, seEffect)}
 #' \item{deltaSubject}{DataFrame within individual subject distributional delta analysis data correct trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
 #' \item{delta}{DataFrame within aggregated subject distributional delta analysis data correct trials (Bin, meanComp, meanIncomp, meanBin, meanEffect, sdEffect, seEffect)}
-#' \item{deltaErrorsSubject}{DataFrame within individual subject distributional delta analysis data incorrect trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
-#' \item{deltaErrors}{DataFrame within aggregated subject distributional delta analysis data incorrect trials (Bin, meanComp, meanIncomp, meanBin, meanEffect, sdEffect, seEffect)}
+#' \item{deltaErrorsSubject}{Optional: DataFrame within individual subject distributional delta analysis data incorrect trials (Bin, meanComp, meanIncomp, meanBin, meanEffect)}
+#' \item{deltaErrors}{Optional: DataFrame within aggregated subject distributional delta analysis data incorrect trials (Bin, meanComp, meanIncomp, meanBin, meanEffect, sdEffect, seEffect)}
 #'
 #' @examples
 #' # Example 1
 #' plot(flankerData)  # flanker data from Ulrich et al. (2015)
 #' plot(simonData)    # simon data from Ulrich et al. (2015)
 #'
-#' # Example 2 (Basic behavioural analysis from Ulrich et al. 2015)
+#' # Example 2 (Basic behavioural analysis from Ulrich et al. )
 #' flankerDat <- cbind(Task = "flanker", flankerData$summarySubject)
 #' simonDat   <- cbind(Task = "simon",   simonData$summarySubject)
 #' datAgg     <- rbind(flankerDat, simonDat)
@@ -302,6 +306,7 @@ dmcObservedData <- function(dat,
                             compCoding   = c("comp", "incomp"),
                             errorCoding  = c(0, 1),
                             quantileType = 5,
+                            deltaErrors  = FALSE,
                             keepRaw      = FALSE,
                             delim        = "\t",
                             skip         = 0) {
@@ -343,6 +348,21 @@ dmcObservedData <- function(dat,
                      perErr  = (nErr / (nErr + nCor)) * 100,
                      .groups = "drop")
 
+  # quick data check
+  problem <- which((datSubject$N < nDelta) | ((datSubject$nCor - datSubject$nOut) < nDelta))
+  if (length(problem) > 0) {
+    message(strwrap(paste0(
+      "Subject ",
+      sprintf(paste0(datSubject$Subject[problem], collapse = ", ")),
+      " -> potentially too few trials within dataset!\n"
+    )))}
+  if (any(is.na(datSubject$rtCor))) {
+    stop(message(strwrap(prefix="\n",
+                         "Problem: NA value(s) for rtCor column calculation.
+    Check subject cell numbers (e.g., number of correct trials, number of outliers within dat in.\n"
+    )))
+  }
+
   # aggregate data across subjects
   datAgg <- datSubject %>%
     dplyr::mutate(rtC = rtCor,
@@ -368,16 +388,18 @@ dmcObservedData <- function(dat,
 
   datAgg_caf <- datSubject_caf %>%
     dplyr::group_by(Bin) %>%
-    dplyr::summarize(accPerComp   = mean(comp),
-                     accPerIncomp = mean(incomp),
-                     meanEffect   = mean(effect),
-                     sdEffect     = sd(effect),
+    dplyr::summarize(accPerComp   = mean(comp, na.rm = TRUE),
+                     accPerIncomp = mean(incomp, na.rm = TRUE),
+                     meanBin      = mean(meanBin, na.rm = TRUE),
+                     meanEffect   = mean(effect, na.rm = TRUE),
+                     sdEffect     = sd(effect, na.rm = TRUE),
                      seEffect     = sdEffect/sqrt(n()),
                      .groups      = "drop")
 
-  # change nDelta to length of pDelta if pDelta not empty
+  # change nDelta to pDelta if pDelta not empty
   if (length(pDelta) != 0) {
-    nDelta <- length(pDelta)
+    nDelta <- pDelta
+    tDelta <- 1
   }
 
   # DELTA
@@ -385,37 +407,38 @@ dmcObservedData <- function(dat,
     dplyr::filter(Error == 0, outlier == 0) %>%
     calculateDelta(., nDelta = nDelta, tDelta = tDelta, quantileType = quantileType)
 
-  datSubject_dec_errors <- dat %>%
-    dplyr::filter(Error == 1, outlier == 0) %>%
-    calculateDelta(., nDelta = nDelta, tDelta = tDelta, quantileType = quantileType)
-
   datAgg_dec <- datSubject_dec %>%
-    dplyr::group_by(Bin) %>%
-    dplyr::summarize(meanComp   = mean(comp),
-                     meanIncomp = mean(incomp),
-                     meanBin    = mean(meanBin),
-                     meanEffect = mean(Effect),
-                     sdEffect   = sd(Effect),
-                     seEffect   = sdEffect / sqrt(n()),
-                     .groups    = "drop")
-
-  datAgg_dec_errors <- datSubject_dec_errors %>%
     dplyr::group_by(Bin) %>%
     dplyr::summarize(meanComp   = mean(comp, na.rm = TRUE),
                      meanIncomp = mean(incomp, na.rm = TRUE),
-                     meanBin    = mean(Bin, na.rm = TRUE),
+                     meanBin    = mean(meanBin, na.rm = TRUE),
                      meanEffect = mean(Effect, na.rm = TRUE),
                      sdEffect   = sd(Effect, na.rm = TRUE),
                      seEffect   = sdEffect / sqrt(n()),
                      .groups    = "drop")
 
-  ##############################################################################
+  if (deltaErrors) {
+
+    datSubject_dec_errors <- dat %>%
+      dplyr::filter(Error == 1, outlier == 0) %>%
+      calculateDelta(., nDelta = nDelta, tDelta = tDelta, quantileType = quantileType)
+
+    datAgg_dec_errors <- datSubject_dec_errors %>%
+      dplyr::group_by(Bin) %>%
+      dplyr::summarize(meanComp   = mean(comp, na.rm = TRUE),
+                       meanIncomp = mean(incomp, na.rm = TRUE),
+                       meanBin    = mean(meanBin, na.rm = TRUE),
+                       meanEffect = mean(Effect, na.rm = TRUE),
+                       sdEffect   = sd(Effect, na.rm = TRUE),
+                       seEffect   = sdEffect / sqrt(n()),
+                       .groups    = "drop")
+
+  }
+
   # save results
   obj <- list()
 
-  if (keepRaw) {
-    obj$data <- dat
-  }
+  if (keepRaw) obj$data <- dat
 
   # summary
   obj$summarySubject <- as.data.frame(datSubject[, c(1, 2, 7, 9, 8)])
@@ -423,7 +446,7 @@ dmcObservedData <- function(dat,
 
   # caf
   obj$cafSubject        <- as.data.frame(datSubject_caf)
-  names(obj$cafSubject) <- c("Subject", "Bin", "accPerComp", "accPerIncomp", "meanEffect")
+  names(obj$cafSubject) <- c("Subject", "Bin", "accPerComp", "accPerIncomp", "meanBin", "meanEffect")
   obj$caf               <- as.data.frame(datAgg_caf)
 
   # delta
@@ -431,9 +454,11 @@ dmcObservedData <- function(dat,
   names(obj$deltaSubject) <- c("Subject", "Bin", "meanComp", "meanIncomp", "meanBin", "meanEffect")
   obj$delta               <- as.data.frame(datAgg_dec)
 
-  obj$deltaErrorsSubject        <- as.data.frame(datSubject_dec_errors)
-  names(obj$deltaErrorsSubject) <- c("Subject", "Bin", "meanComp", "meanIncomp", "meanBin", "meanEffect")
-  obj$deltaErrors               <- as.data.frame(datAgg_dec_errors)
+  if (deltaErrors) {
+    obj$deltaErrorsSubject        <- as.data.frame(datSubject_dec_errors)
+    names(obj$deltaErrorsSubject) <- c("Subject", "Bin", "meanComp", "meanIncomp", "meanBin", "meanEffect")
+    obj$deltaErrors               <- as.data.frame(datAgg_dec_errors)
+  }
 
   class(obj) <- "dmcob"
 
@@ -452,9 +477,8 @@ dmcObservedData <- function(dat,
 #' # Example 1
 #' dat <- dmcCombineObservedData(flankerData, simonData)  # combine flanker/simon data
 #' plot(dat, figType = "delta", xlimDelta = c(200, 700), ylimDelta = c(-20, 80),
-#'      cols = c("black", "darkgrey"), legend = FALSE, resetPar = FALSE)
-#' legend(200, 80, legend = c("Flanker Task", "Simon Task"),
-#'        col = c("black", "darkgrey"), lty = c(1, 1))
+#'      cols = c("black", "darkgrey"), legend.parameters = list(x=200, y=80,
+#'      legend = c("Flanker Task", "Simon Task")))
 #'
 #' @export
 dmcCombineObservedData <- function(...) {
@@ -535,12 +559,17 @@ calculateCAF <- function(dat,
     dplyr::mutate(Bin = ntile(RT, nCAF)) %>%
     dplyr::group_by(Subject, Comp, Bin) %>%
     dplyr::summarize(accPer  = sum(Error == 0) / n(),
-                     .groups = "drop")  %>%
+                     rt      = mean(RT),
+                     .groups = "drop") %>%
     dplyr::group_by(Subject, Comp, Bin) %>%
     dplyr::summarize(accPer  = mean(accPer),
-                     .groups = "drop") %>%
-    tidyr::pivot_wider(., id_cols = c("Subject", "Bin"), names_from = "Comp", values_from = "accPer") %>%
-    dplyr::mutate(effect = ((100 - incomp) - (100 - comp)) * 100)
+                     rt      = mean(rt),
+                     .groups = "drop")  %>%
+    tidyr::pivot_wider(., id_cols = c("Subject", "Bin"), names_from = "Comp", values_from = c("rt", "accPer"))  %>%
+    dplyr::mutate(meanBin = (rt_comp + rt_incomp) / 2,
+                  effect = ((100 - accPer_incomp) - (100 - accPer_comp)) * 100) %>%
+    dplyr::select(-c("rt_comp", "rt_incomp")) %>%
+    dplyr::rename(comp = accPer_comp, incomp = accPer_incomp)
 
   return(dat_caf)
 
@@ -580,7 +609,6 @@ calculateCAF <- function(dat,
 #' delta <- calculateDelta(dat, nDelta = 9, columns = c("Subject", "Congruency", "RT"),
 #'                         compCoding = c("cong", "incong"))
 #'
-#'
 #' @export
 calculateDelta <- function(dat,
                            nDelta = 19,
@@ -605,28 +633,44 @@ calculateDelta <- function(dat,
     dat$Comp <- ifelse(dat$Comp == compCoding[1], "comp", "incomp")
   }
 
-
   if (tDelta == 1) {
 
-    deltaSeq <- seq(0, 100, length.out = nDelta + 2)
-    deltaSeq <- deltaSeq[2:(length(deltaSeq) - 1)]
+    if (length(nDelta) > 1) {
+      deltaSeq <- nDelta
+    } else {
+      deltaSeq <- seq(0, 100, length.out = nDelta + 2)
+      deltaSeq <- deltaSeq[2:(length(deltaSeq) - 1)]
+    }
 
-    dat_delta <- dat %>%
-      dplyr::group_by(Subject, Comp) %>%
-      dplyr::summarize(Bin    = seq(1, length(deltaSeq)),
+    # dplyr 1.1.0 reframe replaces functionality from summarize
+    # https://www.tidyverse.org/blog/2023/02/dplyr-1-1-0-pick-reframe-arrange/
+    if (packageVersion("dplyr")>="1.1.0") {
+      dat_delta <- dat %>%
+        dplyr::group_by(Subject, Comp) %>%
+        dplyr::reframe(Bin     = seq(1, length(deltaSeq)),
                        rt      = quantile(RT, deltaSeq / 100, type = quantileType),
                        .groups = "drop")  %>%
-      tidyr::pivot_wider(., id_cols = c("Subject", "Bin"), names_from = "Comp", values_from = "rt") %>%
-      dplyr::mutate(meanBin = (comp + incomp) / 2,
-                    Effect  = (incomp - comp))
+        tidyr::pivot_wider(., id_cols = c("Subject", "Bin"), names_from = "Comp", values_from = "rt") %>%
+        dplyr::mutate(meanBin = (comp + incomp) / 2,
+                      Effect  = (incomp - comp))
+    } else {
+      dat_delta <- dat %>%
+        dplyr::group_by(Subject, Comp) %>%
+        dplyr::summarize(Bin     = seq(1, length(deltaSeq)),
+                         rt      = quantile(RT, deltaSeq / 100, type = quantileType),
+                         .groups = "drop")  %>%
+        tidyr::pivot_wider(., id_cols = c("Subject", "Bin"), names_from = "Comp", values_from = "rt") %>%
+        dplyr::mutate(meanBin = (comp + incomp) / 2,
+                      Effect  = (incomp - comp))
+    }
 
   } else if (tDelta == 2) {
 
     dat_delta <- dat %>%
       dplyr::group_by(Subject, Comp) %>%
-      dplyr::mutate(Bin = ntile(RT, nDelta + 1)) %>%
+      dplyr::mutate(Bin = ntile(RT, nDelta)) %>%
       dplyr::group_by(Subject, Comp, Bin) %>%
-      dplyr::summarize(rt = mean(RT),
+      dplyr::summarize(rt      = mean(RT),
                        .groups = "drop")  %>%
       tidyr::pivot_wider(., id_cols = c("Subject", "Bin"), names_from = "Comp", values_from = "rt") %>%
       dplyr::mutate(meanBin = (comp + incomp) / 2,
@@ -659,7 +703,7 @@ calculateDelta <- function(dat,
 #' hist(x, 100, xlab = "RT [ms]")
 #'
 #' # Example 2
-#' x <- rtDist(n=20000, gaussMean=800, gaussSD=50, expRate=100)
+#' x <- rtDist(n=2000, gaussMean=500, gaussSD=100, expRate=300)
 #' hist(x, 100, xlab = "RT [ms]")
 #'
 #' @export
@@ -689,4 +733,3 @@ rtDist <- function(n=10000, gaussMean=600, gaussSD=50, expRate=200) {
 errDist <- function(n=10000, proportion = 10) {
   return(ifelse(runif(n) <= proportion / 100, 1, 0))
 }
-

@@ -8,9 +8,8 @@
   x,
   figType = "summary",
   subject = NULL,
-  legend = TRUE,
   labels = c("Compatible", "Incompatible"),
-  cols = c("black", "green", "red"),
+  cols = c("green", "red"),
   errorBars = FALSE,
   errorBarType = "sd",
   ylimRt = NULL,
@@ -20,23 +19,22 @@
   cafBinLabels = FALSE,
   ylimDelta = NULL,
   xlimDelta = NULL,
-  ylimDeltaErrors = NULL,
   xlabs = TRUE,
   ylabs = TRUE,
   xaxts = TRUE,
   yaxts = TRUE,
+  xylabPos = 2,
   resetPar = TRUE,
+  legend = TRUE,
   ...
 )
 }
 \arguments{
 \item{x}{Output from dmcObservedData}
 
-\item{figType}{summary, rtCorrect, errorRate, rtErrors, cdf, caf, delta, deltaErrors, all}
+\item{figType}{summary, rtCorrect, errorRate, rtErrors, cdf, caf, delta, deltaErrors, deltaER, all}
 
 \item{subject}{NULL (aggregated data across all subjects) or integer for subject number}
-
-\item{legend}{TRUE/FALSE (or FUNCTION) plot legend on each plot}
 
 \item{labels}{Condition labels c("Compatible", "Incompatible") default}
 
@@ -60,8 +58,6 @@
 
 \item{xlimDelta}{xlimit for delta plot}
 
-\item{ylimDeltaErrors}{ylimit for delta plot errors}
-
 \item{xlabs}{TRUE/FALSE}
 
 \item{ylabs}{TRUE/FALSE}
@@ -70,7 +66,11 @@
 
 \item{yaxts}{TRUE/FALSE}
 
+\item{xylabPos}{2}
+
 \item{resetPar}{TRUE/FALSE Reset graphical parameters}
+
+\item{legend}{TRUE/FALSE (or FUNCTION) plot legend on each plot}
 
 \item{...}{additional plot pars}
 }

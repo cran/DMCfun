@@ -20,6 +20,7 @@ dmcSim(
   spDist = 0,
   spLim = c(-75, 75),
   spBias = 0,
+  drOnset = 0,
   drDist = 0,
   drShape = 3,
   drLim = c(0.1, 0.7),
@@ -29,7 +30,10 @@ dmcSim(
   nDelta = 9,
   pDelta = vector(),
   tDelta = 1,
+  deltaErrors = FALSE,
   nCAF = 5,
+  bndsRate = 0,
+  bndsSaturation = 0,
   printInputArgs = TRUE,
   printResults = TRUE,
   setSeed = FALSE,
@@ -67,6 +71,8 @@ dmcSim(
 
 \item{spBias}{starting point (sp) bias}
 
+\item{drOnset}{drift rate (dr) onset (default=0; must be >= 0)}
+
 \item{drDist}{drift rate (dr) distribution type (0 = constant, 1 = beta, 2 = uniform)}
 
 \item{drShape}{drift rate (dr) shape parameter}
@@ -82,11 +88,17 @@ function and/or individual trials}
 
 \item{nDelta}{number of delta bins}
 
-\item{pDelta}{alternative to nDelta by directly specifying required percentile values (0-100)}
+\item{pDelta}{alternative to nDelta (tDelta = 1 only) by directly specifying required percentile values (0-100)}
 
 \item{tDelta}{type of delta calculation (1=direct percentiles points, 2=percentile bounds (tile) averaging)}
 
+\item{deltaErrors}{TRUE/FALSE Calculate delta bins for error trials}
+
 \item{nCAF}{Number of CAF bins}
+
+\item{bndsRate}{0 (default) = fixed bnds}
+
+\item{bndsSaturation}{bndsSaturatoin}
 
 \item{printInputArgs}{TRUE/FALSE}
 
@@ -102,7 +114,7 @@ dmcSim returns an object of class "dmcsim" with the following components:
 \item{summary}{Condition means for reaction time and error rate}
 \item{caf}{Accuracy per bin for compatible and incompatible trials}
 \item{delta}{Mean RT and compatibility effect per bin}
-\item{delta_errs}{Mean RT and compatibility effect per bin}
+\item{deltaErrors}{Optional output: Mean RT and compatibility effect per bin for error trials}
 \item{prms}{The input parameters used in the simulation}
 }
 \description{
@@ -113,7 +125,7 @@ Cognitive Psychology, 78, 148-174. This function is essentially a wrapper around
 \examples{
 \donttest{
 # Example 1
-dmc <- dmcSim(fullData = TRUE)  # fullData only required for activation/trials (top/bottom left)
+dmc <- dmcSim(fullData = TRUE) # fullData only needed for activation/trials (left column plot)
 plot(dmc)
 dmc <- dmcSim() # faster!
 plot(dmc)

@@ -11,6 +11,7 @@ dmcFitSubject(
   minVals = list(),
   maxVals = list(),
   fixedFit = list(),
+  freeCombined = list(),
   fitInitialGrid = TRUE,
   fitInitialGridN = 10,
   fixedGrid = list(),
@@ -18,11 +19,15 @@ dmcFitSubject(
   nDelta = 19,
   pDelta = vector(),
   tDelta = 1,
+  deltaErrors = FALSE,
   costFunction = "RMSE",
   spDist = 1,
+  drOnset = 0,
   drDist = 0,
   drShape = 3,
   drLim = c(0.1, 0.7),
+  bndsRate = 0,
+  bndsSaturation = 0,
   rtMax = 5000,
   subjects = c(),
   printInputArgs = TRUE,
@@ -37,21 +42,28 @@ the required input from either an R data frame or external *.txt/*.csv files}
 
 \item{nTrl}{Number of trials to use within dmcSim.}
 
-\item{startVals}{Starting values for to-be estimated parameters. This is a list with values specified individually
+\item{startVals}{Starting values for the to-be estimated parameters. This is a list with values specified individually
 for amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., startVals = list(amp = 20, tau = 200,
-drc = 0.5, bnds = 75, resMean = 300, resSD = 30, aaShape = 2, spShape = 3, spBias = 0, sigm = 4)).}
+drc = 0.5, bnds = 75, resMean = 300, resSD = 30, aaShape = 2, spShape = 3, spBias = 0, sigm = 4, bndsRate=0, bndsSaturation=0)).}
 
 \item{minVals}{Minimum values for the to-be estimated parameters. This is a list with values specified individually
-for amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., minVals = list(amp = 10, tau = 5, drc = 0.1,
-bnds = 20, resMean = 200, resSD = 5, aaShape = 1, spShape = 2, spBias = -20, sigm = 1)).}
+for amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., minVals = list(amp = 0, tau = 5, drc = 0.1,
+bnds = 20, bndsRate=0, bndsSaturation=0, resMean = 200, resSD = 5, aaShape = 1, spShape = 2, spBias = -20, sigm = 1)).}
 
 \item{maxVals}{Maximum values for the to-be estimated parameters. This is a list with values specified individually
 for amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., maxVals = list(amp = 40, tau = 300, drc = 1.0,
-bnds = 150, resMean = 800, resSD = 100, aaShape = 3, spShape = 4, spBias = 20, sigm = 10))}
+bnds = 150, bndsRate=1, bndsSaturation=500, resMean = 800, resSD = 100, aaShape = 3, spShape = 4, spBias = 20, sigm = 10))}
 
 \item{fixedFit}{Fix parameter to starting value. This is a list with bool values specified individually for
 amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., fixedFit = list(amp = F, tau = F, drc = F,
-bnds = F, resMean = F, resSD = F, aaShape = F, spShape = F, spBias = T, sigm = T))}
+bnds = F, bndsRate=T, bndsSaturation=T, resMean = F, resSD = F, aaShape = F, spShape = F, spBias = T, sigm = T))
+NB. Value if fixed at startVals.}
+
+\item{freeCombined}{If fitting 2+ datasets at once, which parameters are allowed to vary between both
+fits (default = all parameters fixed between the two fits e.g. parameter = F).
+This is a list with bool values specified individually for
+amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., freeCombined = list(amp = F,
+tau = F, drc = F, bnds = F, bndsRate=F, bndsSaturation=F, resMean = F, resSD = F, aaShape = F, spShape = F, spBias = F, sigm = F))}
 
 \item{fitInitialGrid}{TRUE/FALSE}
 
@@ -59,27 +71,35 @@ bnds = F, resMean = F, resSD = F, aaShape = F, spShape = F, spBias = T, sigm = T
 
 \item{fixedGrid}{Fix parameter for initial grid search. This is a list with bool values specified individually for
 amp, tau, drc, bnds, resMean, resSD, aaShape, spShape, spBias, sigm (e.g., fixedGrid = list(amp = T, tau = F, drc = T,
-bnds = T, resMean = T, resSD = T, aaShape = T, spShape = T, spBias = T, sigm = T)). As a default, the initial gridsearch
-only searches the tau space.}
+bnds = T, bndsRate=T, bndsSaturation=T, resMean = T, resSD = T, aaShape = T, spShape = T, spBias = T, sigm = T)). As a default,
+the initial gridsearch only searches the tau space.}
 
 \item{nCAF}{Number of CAF bins.}
 
 \item{nDelta}{Number of delta bins.}
 
-\item{pDelta}{An alternative option to nDelta by directly specifying required percentile values (vector of values 0-100)}
+\item{pDelta}{An alternative option to nDelta (tDelta = 1 only) by directly specifying required percentile values (vector of values 0-100)}
 
 \item{tDelta}{The type of delta calculation (1=direct percentiles points, 2=percentile bounds (tile) averaging)}
+
+\item{deltaErrors}{TRUE/FALSE Calculate delta bins for error trials}
 
 \item{costFunction}{The cost function to minimise: root mean square error ("RMSE": default),
 squared percentage error ("SPE"), or likelihood-ratio chi-square statistic ("GS")}
 
 \item{spDist}{The starting point (sp) distribution (0 = constant, 1 = beta, 2 = uniform)}
 
+\item{drOnset}{The starting point of controlled drift rate (i.e., "target" information) relative to automatic ("distractor" incormation) (> 0 ms)}
+
 \item{drDist}{The drift rate (dr) distribution type (0 = constant, 1 = beta, 2 = uniform)}
 
 \item{drShape}{The drift rate (dr) shape parameter}
 
 \item{drLim}{The drift rate (dr) range}
+
+\item{bndsRate}{Collapsing bounds rate. 0 (default) = fixed bounds}
+
+\item{bndsSaturation}{Collapsing bounds saturation}
 
 \item{rtMax}{The limit on simulated RT (decision + non-decisional components)}
 
@@ -111,11 +131,6 @@ plot(fit, flankerData, subject = 1)
 plot(fit, flankerData, subject = 2)
 summary(fit)
 
-# Example 2: Simon data from Ulrich et al. (2015)
-fit <- dmcFitSubject(simonData, nTrl = 1000, subject = c(1, 2))
-plot(fit, simonData, subject = 1)
-plot(fit, simonData, subject = 2)
-summary(fit)
 }
 
 }

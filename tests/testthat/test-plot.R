@@ -3,7 +3,7 @@ context("plot")
 test_that("plot.dmcsim", {
 
   # test 1
-  dmc <- dmcSim(fullData = TRUE, printInputArgs = FALSE, printResults = FALSE)
+  dmc <- dmcSim(fullData = TRUE, deltaErrors = TRUE, printInputArgs = FALSE, printResults = FALSE)
 
   # should give error
   testthat::expect_error(plot(dmc, figType = "xxx"))
@@ -44,7 +44,12 @@ test_that("plot.dmcsim", {
   # test 3
   params <- list(amp = seq(20, 30, 2))
   dmc <- dmcSims(params)
-  plot(dmc, ncol = 2, col = c("red", "green"), legendPos = "topright")
+  plot(dmc, col = c("red", "green"))
+
+  # test 4
+  params <- list(amp = seq(20, 30, 2))
+  dmc <- dmcSims(params)
+  plot(dmc, col = c("red", "green"), legend.parameters = list(ncol=2))
 
 
 })
@@ -63,14 +68,12 @@ test_that("plot.dmcob", {
   testthat::expect_error(plot(DMCfun::flankerData, figType = "cdf"), NA)
   testthat::expect_error(plot(DMCfun::flankerData, figType = "caf"), NA)
   testthat::expect_error(plot(DMCfun::flankerData, figType = "delta"), NA)
-  testthat::expect_error(plot(DMCfun::flankerData, figType = "all"), NA)
   testthat::expect_error(plot(DMCfun::flankerData, figType = "xxx"))
   testthat::expect_error(plot(DMCfun::flankerData, labels = c("a", "b", "c")))
   testthat::expect_error(plot(DMCfun::flankerData, legend = "xxx"))
   testthat::expect_error(plot(DMCfun::flankerData, subject = 1), NA)
   testthat::expect_error(plot(DMCfun::flankerData, subject = 999))
   testthat::expect_error(plot(DMCfun::flankerData, xlabs = FALSE, ylabs = FALSE, xaxts = FALSE, yaxts = FALSE), NA)
-  testthat::expect_error(plot(DMCfun::flankerData, legend = function() {}), NA)
   testthat::expect_error(plot(DMCfun::flankerData, cafBinLabels = TRUE), NA)
   testthat::expect_error(plot(DMCfun::simonData), NA)
   testthat::expect_error(plot(DMCfun::simonData, errorBars = TRUE), NA)
@@ -83,14 +86,12 @@ test_that("plot.dmcob", {
   testthat::expect_error(plot(DMCfun::simonData, figType = "cdf"), NA)
   testthat::expect_error(plot(DMCfun::simonData, figType = "caf"), NA)
   testthat::expect_error(plot(DMCfun::simonData, figType = "delta"), NA)
-  testthat::expect_error(plot(DMCfun::simonData, figType = "all"), NA)
   testthat::expect_error(plot(DMCfun::simonData, figType = "xxx"))
   testthat::expect_error(plot(DMCfun::simonData, labels = c("a", "b", "c")))
   testthat::expect_error(plot(DMCfun::simonData, legend = "xxx"))
   testthat::expect_error(plot(DMCfun::simonData, subject = 1), NA)
   testthat::expect_error(plot(DMCfun::simonData, subject = 999))
   testthat::expect_error(plot(DMCfun::simonData, xlabs = FALSE, ylabs = FALSE, xaxts = FALSE, yaxts = FALSE), NA)
-  testthat::expect_error(plot(DMCfun::simonData, legend = function() {}), NA)
   testthat::expect_error(plot(DMCfun::simonData, cafBinLabels = TRUE), NA)
 
   # simulated datasets
@@ -106,10 +107,8 @@ test_that("plot.dmcob", {
 
   # plot combined data
   dat <- dmcCombineObservedData(DMCfun::flankerData, DMCfun::simonData)  # combine flanker/simon data
-  testthat::expect_error(plot(dat, figType = "all",  cols = c("black", "darkgrey"),
-                              pchs = c(1, 2), resetPar = FALSE), NA)
-  testthat::expect_error(plot(dat, subject = 1, figType = "all",  cols = c("black", "darkgrey"),
-                              pchs = c(1, 2), resetPar = FALSE), NA)
+  testthat::expect_error(plot(dat, figType = "delta",  cols = c("black", "darkgrey"),
+                              pchs = c(1, 2), resetPar = TRUE), NA)
 
 })
 

@@ -8,7 +8,9 @@
   x,
   figType = "summary1",
   xlimActivation = NULL,
+  ylimActivation = NULL,
   xlimTrials = NULL,
+  ylimTrials = NULL,
   xlimPDF = NULL,
   ylimPDF = NULL,
   xlimCDF = NULL,
@@ -16,18 +18,18 @@
   cafBinLabels = FALSE,
   ylimDelta = NULL,
   xlimDelta = NULL,
-  ylimDeltaErrors = NULL,
   ylimRt = NULL,
   ylimErr = NULL,
-  legend = TRUE,
   labels = c("Compatible", "Incompatible"),
-  cols = c("black", "green", "red"),
+  cols = c("green", "red"),
   errorBars = FALSE,
   xlabs = TRUE,
   ylabs = TRUE,
   xaxts = TRUE,
   yaxts = TRUE,
+  xylabPos = 2,
   resetPar = TRUE,
+  legend = TRUE,
   ...
 )
 }
@@ -35,11 +37,15 @@
 \item{x}{Output from dmcSim}
 
 \item{figType}{summary1, summary2, summary3, activation, trials, pdf, cdf,
-caf, delta, rtCorrect, rtErrors, errorRate, all}
+caf, delta, deltaErrors, deltaER, rtCorrect, rtErrors, errorRate, all}
 
 \item{xlimActivation}{xlimit for activation plot}
 
+\item{ylimActivation}{ylimit for activation plot}
+
 \item{xlimTrials}{xlimit for trials plot}
+
+\item{ylimTrials}{ylimit for trials plot}
 
 \item{xlimPDF}{xlimit for PDF plot}
 
@@ -55,13 +61,9 @@ caf, delta, rtCorrect, rtErrors, errorRate, all}
 
 \item{xlimDelta}{xlimit for delta plot (Default is 0 to tmax)}
 
-\item{ylimDeltaErrors}{ylimit for delta plot of errors}
-
 \item{ylimRt}{ylimit for rt plot}
 
 \item{ylimErr}{ylimit for er plot}
-
-\item{legend}{TRUE/FALSE (or FUNCTION) plot legend on each plot}
 
 \item{labels}{Condition labels c("Compatible", "Incompatible") default}
 
@@ -77,7 +79,11 @@ caf, delta, rtCorrect, rtErrors, errorRate, all}
 
 \item{yaxts}{TRUE/FALSE}
 
+\item{xylabPos}{2}
+
 \item{resetPar}{TRUE/FALSE Reset graphical parameters}
+
+\item{legend}{TRUE/FALSE}
 
 \item{...}{additional plot pars}
 }
@@ -105,12 +111,12 @@ dmc = dmcSim()
 plot(dmc)
 
 # Example 3
-dmc = dmcSim()
-plot(dmc, figType = "all")
+dmc = dmcSim(tau = 120)
+plot(dmc)
 
 # Example 4
 dmc = dmcSim()
-plot(dmc, figType = "summary3")
+plot(dmc, figType = "all")
 
 }
 

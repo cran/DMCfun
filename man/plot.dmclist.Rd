@@ -10,12 +10,12 @@
   xlim = NULL,
   figType = "delta",
   xlab = "Time [ms]",
+  ylab = expression(paste(Delta, "Time [ms]")),
+  xylabPos = 2,
   col = c("black", "lightgrey"),
   lineType = "l",
   legend = TRUE,
-  legendPos = "topleft",
-  legendLabels = NULL,
-  ncol = 1,
+  legend.parameters = list(),
   ...
 )
 }
@@ -30,19 +30,19 @@
 
 \item{xlab}{x-label}
 
+\item{ylab}{y-label}
+
+\item{xylabPos}{x/y label position}
+
 \item{col}{color range start/end color}
 
 \item{lineType}{line type ("l", "b", "o") for delta plot}
 
 \item{legend}{TRUE/FALSE Show legend}
 
-\item{legendPos}{legend position}
+\item{legend.parameters}{list}
 
-\item{legendLabels}{Custom legend labels}
-
-\item{ncol}{number of legend columns}
-
-\item{...}{pars for legend}
+\item{...}{pars for plot}
 }
 \value{
 Plot (no return value)
@@ -55,12 +55,12 @@ Plot delta function from multiple dmc simulations (i.e., dmcSims).
 # Example 1
 params <- list(amp = seq(20, 30, 2))
 dmc <- dmcSims(params)
-plot(dmc, ncol = 2, col = c("red", "green"), legendPos = "topright")
+plot(dmc, col = c("red", "green"), legend.parameters = list(x = "topright", ncol=2))
 
 # Example 2
-params <- list(amp=c(10, 20), tau = seq(20, 80, 40), drc = seq(0.2, 0.6, 0.2), nTrl = 50000)
+params <- list(amp=c(10, 20), tau = c(20, 40), drc = c(0.2, 0.6), nTrl = 50000)
 dmc <- dmcSims(params)
-plot(dmc, ncol = 2, col=c("green", "blue"), ylim = c(-10, 120))
+plot(dmc, col=c("green", "blue"), ylim = c(-10, 120), legend.parameters=list(ncol=2))
 
 }
 
